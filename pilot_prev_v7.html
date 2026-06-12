@@ -1,0 +1,2680 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#5C7541">
+<title>PILOT PRÉVISIONS — UNI-VERT (Cloud)</title>
+<link rel="manifest" href='data:application/manifest+json,{"name":"PILOT PRÉVISIONS","short_name":"PILOT","start_url":".","display":"standalone","background_color":"%23F4E4C1","theme_color":"%235C7541"}'>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --terracotta:#C44536;--terracotta-dark:#9B3429;
+  --olive:#5C7541;--olive-dark:#44582F;--olive-light:#7A9659;
+  --safran:#E8A33D;--safran-light:#F5C57A;
+  --sable:#F4E4C1;--sable-light:#FAF1DC;--sable-dark:#E5D2A7;
+  --encre:#1F2937;--encre-soft:#4B5563;--blanc:#FFFFFF;
+  --vert:#4D8B3A;--orange:#E8A33D;--rouge:#C44536;
+  --shadow:0 2px 8px rgba(31,41,55,.08);--shadow-lg:0 8px 24px rgba(31,41,55,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{font-family:Arial,sans-serif;font-size:16px;color:var(--encre);background:var(--sable-light);min-height:100vh}
+h1,h2,h3{font-family:Georgia,serif;font-weight:700}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit;font-size:16px}
+
+/* Config screen */
+.config-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,var(--sable),var(--sable-light))}
+.config-card{background:var(--blanc);border-radius:16px;padding:32px 28px;max-width:520px;width:100%;box-shadow:var(--shadow-lg);border-top:4px solid var(--terracotta)}
+.config-card h1{font-size:1.4rem;color:var(--olive-dark);margin-bottom:8px}
+.config-card p{color:var(--encre-soft);font-size:.92rem;margin-bottom:18px;line-height:1.5}
+
+/* Login screen */
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,var(--sable),var(--sable-light))}
+.login-card{background:var(--blanc);border-radius:16px;padding:32px 24px;max-width:440px;width:100%;box-shadow:var(--shadow-lg);border-top:4px solid var(--olive)}
+.login-logo{text-align:center;margin-bottom:24px}
+.brand-mark{width:64px;height:64px;border-radius:50%;background:var(--olive);color:var(--sable);display:grid;place-items:center;font-family:Georgia,serif;font-weight:700;font-size:24px;margin:0 auto 12px;border:3px solid var(--safran)}
+.login-logo h1{font-size:1.4rem;color:var(--olive-dark)}
+.login-logo p{color:var(--encre-soft);font-size:.85rem;margin-top:4px}
+.cloud-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(77,139,58,.12);color:var(--vert);padding:3px 10px;border-radius:12px;font-size:.72rem;font-weight:700;margin-top:8px}
+
+.field-group{margin-bottom:14px}
+.field-group label{display:block;font-size:.78rem;text-transform:uppercase;letter-spacing:.8px;color:var(--encre-soft);margin-bottom:6px;font-weight:600}
+.field-group select,.field-group input,.field-group textarea{width:100%;padding:11px 14px;border:2px solid var(--sable-dark);border-radius:10px;background:var(--sable-light)}
+.field-group select:focus,.field-group input:focus,.field-group textarea:focus{outline:none;border-color:var(--olive);background:var(--blanc)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:10px;font-weight:700;font-size:.9rem;letter-spacing:.4px;transition:all .2s;text-transform:uppercase}
+.btn-primary{background:var(--olive);color:var(--blanc)}.btn-primary:hover{background:var(--olive-dark)}
+.btn-block{width:100%}.btn-sm{padding:7px 12px;font-size:.78rem;text-transform:none;letter-spacing:0}
+.btn-ghost{background:transparent;color:var(--olive);border:2px solid var(--olive)}.btn-ghost:hover{background:var(--olive);color:var(--blanc)}
+
+.pin-display{display:flex;gap:10px;justify-content:center;margin:18px 0}
+.pin-dot{width:14px;height:14px;border-radius:50%;background:var(--sable);border:2px solid var(--sable-dark)}
+.pin-dot.filled{background:var(--olive);border-color:var(--olive)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:280px;margin:0 auto}
+.pin-key{background:var(--sable);color:var(--encre);padding:16px 0;border-radius:10px;font-family:Georgia,serif;font-size:1.3rem;font-weight:700}
+.pin-key:hover{background:var(--sable-dark)}
+.pin-key:active{transform:scale(.95);background:var(--olive);color:var(--sable)}
+.pin-key.action{background:var(--olive);color:var(--blanc);font-size:.85rem}
+
+/* App */
+.app-header{background:var(--olive);color:var(--sable);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .brand-mark{width:36px;height:36px;font-size:16px;background:var(--sable);color:var(--olive);border:2px solid var(--safran);margin:0}
+.brand-text{display:flex;flex-direction:column;line-height:1.1}
+.brand-text strong{font-family:Georgia,serif;font-size:1rem}
+.brand-text span{font-size:.7rem;opacity:.85;text-transform:uppercase;letter-spacing:1px}
+.user-pill{background:rgba(244,228,193,.15);border:1px solid rgba(244,228,193,.3);padding:6px 12px;border-radius:20px;font-size:.8rem;color:var(--sable)}
+
+main{padding:16px;max-width:1300px;margin:0 auto;padding-bottom:80px}
+.section{background:var(--blanc);padding:18px;border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--sable);flex-wrap:wrap;gap:10px}
+.section-header h2{font-size:1.1rem;color:var(--olive-dark)}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--blanc);padding:15px;border-radius:12px;box-shadow:var(--shadow);border-left:4px solid var(--olive)}
+.kpi-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.8px;color:var(--encre-soft);font-weight:600}
+.kpi-value{font-family:Georgia,serif;font-size:1.5rem;font-weight:700;color:var(--encre);margin-top:4px}
+
+.tabs{background:var(--blanc);display:flex;overflow-x:auto;border-bottom:1px solid var(--sable-dark);padding:0 8px}
+.tab{padding:14px 16px;font-size:.88rem;font-weight:600;color:var(--encre-soft);border-bottom:3px solid transparent;white-space:nowrap}
+.tab.active{color:var(--olive);border-bottom-color:var(--olive)}
+
+.prev-table{width:100%;border-collapse:collapse;font-size:.85rem;background:var(--blanc);border-radius:8px;overflow:hidden}
+.prev-table th{background:var(--olive);color:var(--sable);padding:8px 6px;text-align:center;font-size:.72rem}
+.prev-table th.produit-col{text-align:left;padding-left:10px;min-width:200px;background:var(--olive-dark)}
+.prev-table th.total-col{background:var(--safran);color:var(--encre)}
+.prev-table td{padding:6px 4px;border-bottom:1px solid var(--sable);text-align:center}
+.prev-table td.produit-cell{text-align:left;padding:8px 10px;font-weight:600;background:var(--sable-light)}
+.prev-table td.produit-cell .emballage{display:block;font-weight:400;font-size:.72rem;color:var(--encre-soft)}
+.prev-table td.total-cell{background:var(--sable);font-weight:700;font-family:Georgia,serif}
+.prev-table input[type=number]{width:55px;padding:5px 4px;border:1px solid var(--sable-dark);border-radius:4px;text-align:center;background:var(--blanc)}
+.prev-table input[type=number]:focus{outline:none;border-color:var(--olive);background:var(--sable-light)}
+.prev-table input[type=text]{width:160px;padding:5px 6px;border:1px solid var(--sable-dark);border-radius:4px;background:var(--blanc)}
+.prev-table input[type=text]:focus{outline:none;border-color:var(--olive)}
+.table-wrapper{overflow-x:auto}
+
+.statut-pill{display:inline-flex;padding:4px 10px;border-radius:14px;font-size:.74rem;font-weight:700;text-transform:uppercase}
+.statut-NON_SAISI{background:var(--sable-dark);color:var(--encre-soft)}
+.statut-EN_COURS{background:rgba(232,163,61,.18);color:#B07820}
+.statut-SOUMISE{background:rgba(77,139,58,.15);color:var(--vert)}
+.statut-EN_RETARD{background:rgba(196,69,54,.15);color:var(--rouge)}
+
+.sync-indicator{position:fixed;bottom:16px;right:16px;background:var(--vert);color:var(--blanc);padding:8px 14px;border-radius:20px;font-size:.78rem;font-weight:700;display:none;align-items:center;gap:6px;box-shadow:var(--shadow-lg);z-index:200}
+.sync-indicator.show{display:inline-flex}
+.sync-indicator.error{background:var(--terracotta)}
+.sync-indicator.syncing{background:var(--safran);color:var(--encre)}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--encre);color:var(--blanc);padding:12px 20px;border-radius:24px;box-shadow:var(--shadow-lg);z-index:2000;opacity:0;transition:opacity .3s;font-size:.9rem;pointer-events:none}
+.toast.show{opacity:1}
+
+.commentaire-box{margin-top:16px}
+.commentaire-box textarea{width:100%;padding:10px 14px;border:2px solid var(--sable-dark);border-radius:10px;background:var(--sable-light);resize:vertical;min-height:80px;font-size:.9rem}
+.commentaire-box textarea:focus{outline:none;border-color:var(--olive);background:var(--blanc)}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--encre-soft)}
+.help-text{font-size:.78rem;color:var(--encre-soft)}
+
+footer{position:fixed;bottom:0;left:0;right:0;background:var(--encre);color:var(--sable);padding:7px 14px;text-align:center;font-size:.7rem}
+.hidden{display:none !important}
+
+/* Modal nouveau produit */
+.modal-overlay{position:fixed;inset:0;background:rgba(31,41,55,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.hidden{display:none !important}
+.modal-card{background:var(--blanc);border-radius:16px;padding:28px 24px;max-width:420px;width:100%;box-shadow:var(--shadow-lg);border-top:4px solid var(--safran)}
+.modal-card h3{font-size:1.1rem;color:var(--olive-dark);margin-bottom:6px}
+.modal-card p{font-size:.82rem;color:var(--encre-soft);margin-bottom:18px}
+.modal-actions{display:flex;gap:10px;margin-top:18px}
+.tmp-badge{display:inline-block;background:rgba(232,163,61,.2);color:#8a6010;font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:6px;vertical-align:middle;margin-left:4px}
+
+@media(max-width:600px){
+  /* Layout général */
+  main{padding:8px;padding-bottom:70px}
+  .section{padding:12px 10px}
+
+  /* Header */
+  .app-header{padding:10px 12px}
+  .brand-text strong{font-size:.88rem}
+  .user-pill{font-size:.72rem;padding:5px 9px}
+
+  /* KPIs : 2 par ligne */
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .kpi{padding:10px 10px}
+  .kpi-value{font-size:1.2rem}
+  .kpi-label{font-size:.62rem}
+
+  /* Onglets */
+  .tabs{padding:0 4px}
+  .tab{padding:11px 10px;font-size:.78rem}
+
+  /* Tableau de saisie : compact */
+  .prev-table{font-size:.72rem}
+  .prev-table th{padding:6px 3px;font-size:.62rem}
+  .prev-table th.produit-col{min-width:100px;max-width:110px}
+  .prev-table td{padding:4px 2px}
+  .prev-table td.produit-cell{padding:6px 6px;max-width:110px}
+  .prev-table td.produit-cell .emballage{display:none}
+  .prev-table input[type=number]{width:36px;padding:4px 2px;font-size:.78rem}
+  .prev-table input[type=text]{width:110px;font-size:.78rem}
+
+  /* Icônes produits dans le tableau : masquer sur mobile pour gagner de la place */
+  .prev-table td.produit-cell span[style*="display:flex"] svg{display:none}
+
+  /* Planification + météo côte à côte : passer en colonne sur mobile */
+  #prod-view-prevision > div[style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr !important;
+    gap:8px
+  }
+
+  /* Section header */
+  .section-header{flex-direction:column;align-items:flex-start;gap:6px}
+  .section-header h2{font-size:.95rem}
+
+  /* Boutons */
+  .btn-sm{padding:6px 10px;font-size:.75rem}
+
+  /* PIN pad : plus grand sur mobile */
+  .pin-key{padding:18px 0;font-size:1.4rem}
+  .pin-pad{max-width:300px}
+
+  /* Commentaire */
+  .commentaire-box textarea{min-height:60px;font-size:.85rem}
+
+  /* Footer */
+  footer{padding:5px 10px;font-size:.62rem}
+
+  /* Modal */
+  .modal-card{padding:20px 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- ÉCRAN DE CONFIGURATION INITIALE -->
+<div id="config-screen" class="config-screen hidden">
+  <div class="config-card">
+    <h1>🔧 Configuration Supabase</h1>
+    <p>Pour fonctionner en mode multi-utilisateurs, l'application a besoin de l'<strong>URL</strong> et de la <strong>clé publique anon</strong> de votre projet Supabase.</p>
+    <div class="field-group">
+      <label>URL Supabase</label>
+      <input type="url" id="cfg-url" placeholder="https://xxxxx.supabase.co">
+    </div>
+    <div class="field-group">
+      <label>Clé anon publique</label>
+      <input type="text" id="cfg-key" placeholder="eyJhbGciOi...">
+    </div>
+    <button class="btn btn-primary btn-block" onclick="saveConfig()">Enregistrer et continuer →</button>
+  </div>
+</div>
+
+<!-- ÉCRAN DE LOGIN -->
+<div id="login-screen" class="login-screen hidden">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="brand-mark">UV</div>
+      <h1>PILOT PRÉVISIONS</h1>
+      <p>UNI-VERT — Bio Équitable EN FRANCE</p>
+      <span class="cloud-badge">☁️ Synchro Cloud · Supabase</span>
+    </div>
+    <div id="login-step-1">
+      <div class="field-group">
+        <label>Profil</label>
+        <select id="login-user-select"><option value="">— Sélectionner —</option></select>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="handleLoginStep1()">Continuer →</button>
+    </div>
+    <div id="login-step-2" class="hidden">
+      <p style="text-align:center;color:var(--encre-soft);margin-bottom:8px">Bonjour <strong id="login-user-name"></strong></p>
+      <p class="help-text" style="text-align:center;margin-bottom:14px">Code à 4 chiffres</p>
+      <div class="pin-display"><div class="pin-dot" id="dot-0"></div><div class="pin-dot" id="dot-1"></div><div class="pin-dot" id="dot-2"></div><div class="pin-dot" id="dot-3"></div></div>
+      <div class="pin-pad">
+        <button class="pin-key" onclick="pinPress('1')">1</button>
+        <button class="pin-key" onclick="pinPress('2')">2</button>
+        <button class="pin-key" onclick="pinPress('3')">3</button>
+        <button class="pin-key" onclick="pinPress('4')">4</button>
+        <button class="pin-key" onclick="pinPress('5')">5</button>
+        <button class="pin-key" onclick="pinPress('6')">6</button>
+        <button class="pin-key" onclick="pinPress('7')">7</button>
+        <button class="pin-key" onclick="pinPress('8')">8</button>
+        <button class="pin-key" onclick="pinPress('9')">9</button>
+        <button class="pin-key action" onclick="pinClear()">Eff</button>
+        <button class="pin-key" onclick="pinPress('0')">0</button>
+        <button class="pin-key action" onclick="loginBack()">←</button>
+      </div>
+    </div>
+
+    <!-- ÉTAPE 3 : choix semaine (producteurs uniquement) -->
+    <div id="login-step-3" class="hidden">
+      <p style="text-align:center;color:var(--encre-soft);font-size:.9rem;margin-bottom:18px">
+        Bonjour <strong id="login-step3-name"></strong> &#128075;<br>
+        <span style="font-size:.82rem">Pour quelle semaine saisissez-vous ?</span>
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+        <button id="btn-semaine-courante" onclick="choisirSemaine('courante')"
+          style="background:var(--sable-light);border:2px solid var(--olive);border-radius:12px;padding:16px 10px;cursor:pointer;text-align:center;transition:all .18s">
+          <div style="font-size:1.5rem;margin-bottom:6px">&#10003;</div>
+          <div style="font-family:Georgia,serif;font-weight:700;color:var(--olive-dark);font-size:1.05rem" id="label-s-courante">S&#8212;</div>
+          <div style="font-size:.75rem;color:var(--encre-soft);font-weight:600;margin-top:2px">Semaine en cours</div>
+          <div style="font-size:.72rem;color:var(--encre-soft);margin-top:3px" id="dates-s-courante">&#8212;</div>
+        </button>
+        <button id="btn-semaine-suivante" onclick="choisirSemaine('suivante')"
+          style="background:var(--sable-light);border:2px solid var(--sable-dark);border-radius:12px;padding:16px 10px;cursor:pointer;text-align:center;transition:all .18s">
+          <div style="font-size:1.5rem;margin-bottom:6px">&#128197;</div>
+          <div style="font-family:Georgia,serif;font-weight:700;color:var(--encre);font-size:1.05rem" id="label-s-suivante">S&#8212;</div>
+          <div style="font-size:.75rem;color:var(--encre-soft);font-weight:600;margin-top:2px">Semaine suivante</div>
+          <div style="font-size:.72rem;color:var(--encre-soft);margin-top:3px" id="dates-s-suivante">&#8212;</div>
+        </button>
+      </div>
+      <button class="btn btn-ghost btn-block" onclick="loginBackToPin()" style="font-size:.82rem">&#8592; Retour</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-shell" class="hidden">
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark">UV</div>
+      <div class="brand-text"><strong>PILOT PRÉVISIONS</strong><span>UNI-VERT · Cloud</span></div>
+    </div>
+    <button class="user-pill" onclick="logout()"><span id="header-user">—</span> ⏻</button>
+  </header>
+
+  <nav class="tabs hidden" id="admin-tabs">
+    <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    <button class="tab" data-tab="consolide" onclick="switchTab('consolide')">📈 Consolidation</button>
+    <button class="tab" data-tab="detail" onclick="switchTab('detail')">📦 Détail produits</button>
+    <button class="tab" data-tab="recap-prod" onclick="switchTab('recap-prod')">🌾 Récap Prod</button>
+    <button class="tab" data-tab="recap-jour" onclick="switchTab('recap-jour')">🗓 Récap Jour</button>
+    <button class="tab" data-tab="adherents" onclick="switchTab('adherents')">👥 Adhérents</button>
+    <button class="tab" data-tab="quinzaine" onclick="switchTab('quinzaine')">📅 Quinzaine</button>
+    <div style="display:flex;align-items:center;gap:6px;margin-left:auto;padding:6px 12px">
+      <span style="font-size:.72rem;color:var(--encre-soft);white-space:nowrap">📅 Semaine</span>
+      <select id="admin-semaine-select" onchange="onAdminSemaineChange()" style="padding:5px 8px;border:2px solid var(--sable-dark);border-radius:8px;background:var(--sable-light);font-size:.78rem;max-width:140px">
+        <option value="">Chargement…</option>
+      </select>
+    </div>
+  </nav>
+
+  <main>
+    <!-- VUE PRODUCTEUR -->
+    <div id="view-producteur" class="hidden">
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-label">Semaine</div><div class="kpi-value" id="prod-week">—</div></div>
+        <div class="kpi"><div class="kpi-label">Saison</div><div class="kpi-value" id="prod-saison">—</div></div>
+        <div class="kpi"><div class="kpi-label">Statut</div><div class="kpi-value"><span class="statut-pill" id="prod-statut">—</span></div></div>
+        <div class="kpi"><div class="kpi-label">Total prévu</div><div class="kpi-value" id="prod-total">— colis</div></div>
+      </div>
+      <nav class="tabs" id="prod-tabs" style="margin-bottom:0;border-radius:12px 12px 0 0;overflow:hidden">
+        <button class="tab active" data-ptab="prevision" onclick="switchProdTab('prevision')">📋 Ma prévision</button>
+        <button class="tab" data-ptab="planification" onclick="switchProdTab('planification')">📅 Ma planification</button>
+      </nav>
+
+      <!-- ONGLET PLANIFICATION -->
+      <div id="prod-view-planification" class="section hidden" style="border-radius:0 0 12px 12px;margin-top:0">
+        <div class="table-wrapper" id="prod-qz-table"><p class="empty-state" style="padding:20px">Chargement…</p></div>
+      </div>
+
+      <!-- ONGLET PREVISION -->
+      <div id="prod-view-prevision" class="section" style="border-radius:0 0 12px 12px;margin-top:0">
+        <!-- Planification + Météo côte à côte -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;align-items:start">
+          <div id="prod-qz-rappel"></div>
+          <div id="prod-meteo"></div>
+        </div>
+        <div class="section-header">
+          <h2>📋 Ma prévision semaine</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="loadProducteur()">↻ Actualiser</button>
+            <button class="btn btn-primary btn-sm" onclick="submitPrevision()">✓ Soumettre</button>
+          </div>
+        </div>
+        <p class="help-text" style="margin-bottom:10px">Saisir les volumes en <strong>colis</strong>. Les modifications sont enregistrées dans le cloud à chaque changement.</p>
+        <div class="table-wrapper" id="prod-table-wrap"></div>
+        <div class="commentaire-box" style="margin-top:16px">
+          <label style="font-size:.78rem;text-transform:uppercase;letter-spacing:.8px;color:var(--encre-soft);font-weight:600;display:block;margin-bottom:6px">💬 Commentaire (facultatif)</label>
+          <textarea id="prod-commentaire" placeholder="Informations complémentaires, absences, retards de livraison..." onchange="saveCommentaire()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- VUE DASHBOARD ADMIN -->
+    <div id="view-dashboard" class="hidden">
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-label">Semaine</div><div class="kpi-value" id="adm-week">—</div></div>
+        <div class="kpi"><div class="kpi-label">Soumises</div><div class="kpi-value" id="adm-soumises">—</div></div>
+        <div class="kpi"><div class="kpi-label">En cours / Non saisi</div><div class="kpi-value" id="adm-pending">—</div></div>
+        <div class="kpi"><div class="kpi-label">Volume total</div><div class="kpi-value" id="adm-volume">— colis</div></div>
+      </div>
+      <div class="section">
+        <div class="section-header">
+          <h2>📋 Statut par adhérent</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="loadAdmin()">↻ Actualiser</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleSelectRelance()" id="btn-select-relance">☐ Sélectionner</button>
+            <button class="btn btn-primary btn-sm" id="btn-relance-selection" onclick="relancerSelection()" style="display:none">📩 Relancer la sélection (<span id="nb-selection">0</span>)</button>
+          </div>
+        </div>
+        <div id="adm-list"></div>
+      </div>
+    </div>
+
+    <!-- VUE CONSOLIDATION -->
+    <div id="view-consolide" class="hidden">
+      <div class="section">
+        <div class="section-header">
+          <h2>📈 Matrice consolidée</h2>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="loadConsolidation()">↻ Actualiser</button>
+            <button class="btn btn-primary btn-sm" onclick="printConsolidation()">🖨 Imprimer PDF</button>
+          </div>
+        </div>
+        <div class="table-wrapper" id="consolide-table"></div>
+      </div>
+    </div>
+
+    <!-- VUE DETAIL PRODUITS PAR PRODUCTEUR -->
+    <div id="view-detail" class="hidden">
+      <div class="section">
+        <div class="section-header">
+          <h2>📦 Détail par produit × producteur</h2>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="loadDetail()">↻ Actualiser</button>
+            <button class="btn btn-primary btn-sm" onclick="printDetail()">🖨 Imprimer PDF</button>
+          </div>
+        </div>
+        <div class="table-wrapper" id="detail-table"></div>
+      </div>
+    </div>
+
+    <!-- VUE RECAP JOUR -->
+    <div id="view-recap-jour" class="hidden">
+      <div class="section">
+        <div class="section-header">
+          <h2>🗓 Récapitulatif par jour</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="recap-jour-select" onchange="loadRecapJour()" style="padding:7px 12px;border:2px solid var(--sable-dark);border-radius:8px;background:var(--sable-light);font-size:.85rem;min-width:200px">
+              <option value="">— Choisir un jour —</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="loadRecapJour()">↻ Actualiser</button>
+            <button class="btn btn-primary btn-sm" id="recap-jour-print-btn" onclick="printRecapJour()" style="display:none">🖨 Imprimer PDF</button>
+          </div>
+        </div>
+        <div id="recap-jour-content"><p class="empty-state">Sélectionnez un jour pour voir les volumes.</p></div>
+      </div>
+    </div>
+
+    <!-- VUE RECAP PROD -->
+    <div id="view-recap-prod" class="hidden">
+      <div class="section">
+        <div class="section-header">
+          <h2>🌾 Récapitulatif par producteur</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="recap-prod-select" onchange="loadRecapProd()" style="padding:7px 12px;border:2px solid var(--sable-dark);border-radius:8px;background:var(--sable-light);font-size:.85rem;min-width:220px">
+              <option value="">— Choisir un producteur —</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="loadRecapProd()">↻ Actualiser</button>
+            <button class="btn btn-primary btn-sm" id="recap-prod-print-btn" onclick="printRecapProd()" style="display:none">🖨 Imprimer PDF</button>
+          </div>
+        </div>
+        <div id="recap-prod-content"><p class="empty-state">Sélectionnez un producteur pour voir ses prévisions.</p></div>
+      </div>
+    </div>
+
+    <!-- VUE ADHERENTS -->
+    <div id="view-adherents" class="hidden">
+      <div class="section">
+        <div class="section-header">
+          <h2>👥 Liste des adhérents</h2>
+        </div>
+        <div id="adh-list"></div>
+      </div>
+    </div>
+
+    <!-- VUE QUINZAINE -->
+    <div id="view-quinzaine" class="hidden">
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-label">Volume total</div><div class="kpi-value" id="qz-volume">—</div></div>
+        <div class="kpi"><div class="kpi-label">Quinzaine en cours</div><div class="kpi-value" id="qz-current">—</div></div>
+        <div class="kpi"><div class="kpi-label">Produits saisis</div><div class="kpi-value" id="qz-produits">—</div></div>
+      </div>
+      <div class="section">
+        <div class="section-header">
+          <h2>📅 Prévisions quinzaine</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <select id="qz-filter-adherent" onchange="loadQuinzaine()" style="padding:6px 10px;border:2px solid var(--sable-dark);border-radius:8px;background:var(--sable-light);font-size:.82rem">
+              <option value="">Tous les adhérents</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="loadQuinzaine()">↻ Actualiser</button>
+          </div>
+        </div>
+        <div class="table-wrapper" id="qz-table"></div>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <span>SCA UNI-VERT · Cloud Supabase · v4.0</span>
+  </footer>
+</div>
+
+<div class="sync-indicator" id="sync-indicator">☁️ Synchronisé</div>
+<div class="toast" id="toast"></div>
+
+<!-- MODAL NOUVEAU PRODUIT -->
+<div class="modal-overlay hidden" id="modal-nouveau-produit">
+  <div class="modal-card">
+    <h3>➕ Ajouter un nouveau produit</h3>
+    <p>Ce produit sera ajouté au catalogue avec un code temporaire. Un admin pourra lui attribuer un code définitif.</p>
+    <div class="field-group"><label>Variété / Nom du produit</label><input type="text" id="np-variete" placeholder="ex: Courgette jaune"></div>
+    <div class="field-group"><label>Famille</label><input type="text" id="np-famille" placeholder="ex: Légume, Fruit..."></div>
+    <div class="field-group"><label>Emballage</label><input type="text" id="np-emballage" placeholder="ex: Colis 5kg, Vrac..."></div>
+    <div class="field-group"><label>Saison</label><input type="text" id="np-saison" id="np-saison" placeholder="ex: Hiver, Été..."></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="fermerModalProduit()" style="flex:1">Annuler</button>
+      <button class="btn btn-primary btn-sm" onclick="creerNouveauProduit()" style="flex:2">✓ Créer ce produit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CONFIG_KEY = 'univert_supabase_config';
+const WEBHOOK_SOUMISSION = 'https://n8n.srv1745823.hstgr.cloud/webhook/soumission-prevision';
+const WEBHOOK_RELANCE   = 'https://n8n.srv1745823.hstgr.cloud/webhook/relance-prevision';
+let sb = null;
+let CFG = null;
+
+function getConfig() {
+  try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || 'null'); }
+  catch (e) { return null; }
+}
+function saveConfig() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  if (!url || !key) { toast('Remplissez les deux champs'); return; }
+  if (!url.startsWith('https://') || (!url.includes('.supabase.co') && !url.includes('.sb.co'))) { toast('URL invalide'); return; }
+  localStorage.setItem(CONFIG_KEY, JSON.stringify({url, key}));
+  CFG = {url, key};
+  initSupabase();
+  showLogin();
+}
+function initSupabase() {
+  if (!CFG) return false;
+  try {
+    sb = window.supabase.createClient(CFG.url, CFG.key);
+    return true;
+  } catch (e) { console.error(e); return false; }
+}
+
+/* STATE */
+let session = null;
+let currentTab = 'dashboard';
+let cache = {
+  adherents: [], admins: [], produits: [], adherentProduits: [],
+  semaineCourante: null, params: {}
+};
+let pinBuffer = '';
+let pendingLogin = null;
+
+/* UTILS */
+function getCurrentISOWeek(d) {
+  // À partir du mercredi (3), on bascule sur S+1
+  const dow = d.getDay(); // 0=dim, 3=mer, 4=jeu, 5=ven, 6=sam
+  if (dow === 3 || dow === 4 || dow === 5 || dow === 6 || dow === 0) {
+    d = new Date(d.getTime() + 7 * 86400000); // +7 jours
+  }
+  d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNum = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNum).padStart(2,'0')}`;
+}
+/* Calcule les en-têtes de colonnes avec dates à partir de l'id semaine ex: 2025-W23 */
+function buildHeaders(semaineId) {
+  const jours = ['Ven', 'Sam', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven+1', 'Sam+1'];
+  // Offset en jours depuis le lundi de la semaine ISO
+  // Notre semaine : Ven(-3), Sam(-2), Lun(0), Mar(1), Mer(2), Jeu(3), Ven+1(4), Sam+1(5)
+  const offsets = [-3, -2, 0, 1, 2, 3, 4, 5];
+  try {
+    const [year, w] = semaineId.split('-W');
+    // Trouver le lundi de cette semaine ISO
+    const jan4 = new Date(Date.UTC(+year, 0, 4));
+    const lundi = new Date(jan4);
+    lundi.setUTCDate(jan4.getUTCDate() - ((jan4.getUTCDay() || 7) - 1) + (+w - 1) * 7);
+    return jours.map((j, i) => {
+      const d = new Date(lundi);
+      d.setUTCDate(lundi.getUTCDate() + offsets[i]);
+      const dd = String(d.getUTCDate()).padStart(2, '0');
+      const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+      return `${j} ${dd}/${mm}`;
+    });
+  } catch(e) {
+    return jours;
+  }
+}
+
+function toast(msg, t = 2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), t);
+}
+function showSync(state, msg) {
+  const el = document.getElementById('sync-indicator');
+  el.classList.remove('error', 'syncing');
+  if (state === 'syncing') el.classList.add('syncing');
+  if (state === 'error') el.classList.add('error');
+  el.textContent = msg;
+  el.classList.add('show');
+  if (state === 'ok') setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+/* REFERENTIELS */
+async function loadReferentiels() {
+  showSync('syncing', '☁️ Chargement…');
+  const [adh, adm, prod, par, adhProd] = await Promise.all([
+    sb.from('adherents').select('*').eq('actif', true).order('representant'),
+    sb.from('admins').select('*'),
+    sb.from('produits').select('*').order('saison').order('ordre'),
+    sb.from('parametres').select('*'),
+    sb.from('adherent_produits').select('*')
+  ]);
+  if (adh.error || adm.error || prod.error || par.error) {
+    showSync('error', '❌ Erreur Supabase');
+    console.error('Errors:', adh.error, adm.error, prod.error, par.error);
+    return false;
+  }
+  cache.adherents = adh.data || [];
+  cache.admins = adm.data || [];
+  cache.produits = prod.data || [];
+  cache.adherentProduits = adhProd.data || [];
+  cache.params = {};
+  (par.data || []).forEach(p => cache.params[p.cle] = p.valeur);
+  cache.semaineCourante = getCurrentISOWeek(new Date());
+  showSync('ok', '☁️ Synchronisé');
+  return true;
+}
+
+/* LOGIN */
+function buildLoginSelect() {
+  const sel = document.getElementById('login-user-select');
+  sel.innerHTML = '<option value="">— Sélectionner —</option>';
+  if (cache.admins.length) {
+    const og = document.createElement('optgroup');
+    og.label = '🏢 Coopérative';
+    cache.admins.forEach(a => {
+      const o = document.createElement('option');
+      o.value = `adm:${a.id}`;
+      o.textContent = `${a.nom} — ${a.role}`;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  }
+  if (cache.adherents.length) {
+    const og = document.createElement('optgroup');
+    og.label = '🌾 Adhérents producteurs';
+    [...cache.adherents].sort((a, b) => (a.nom_exploitation || a.representant).localeCompare(b.nom_exploitation || b.representant, 'fr')).forEach(p => {
+      const o = document.createElement('option');
+      o.value = `prod:${p.id}`;
+      o.textContent = p.nom_exploitation || p.representant;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  }
+}
+function handleLoginStep1() {
+  const v = document.getElementById('login-user-select').value;
+  if (!v) { toast('Sélectionnez votre profil'); return; }
+  const [type, id] = v.split(':');
+  const list = type === 'prod' ? cache.adherents : cache.admins;
+  const user = list.find(u => u.id === id);
+  if (!user) return;
+  pendingLogin = {type: type === 'prod' ? 'producteur' : 'admin', user};
+  const labelName = type === 'prod' ? user.representant : user.nom;
+  document.getElementById('login-user-name').textContent = labelName;
+  document.getElementById('login-step-1').classList.add('hidden');
+  document.getElementById('login-step-2').classList.remove('hidden');
+  pinBuffer = '';
+  updatePinDots();
+}
+function loginBack() {
+  document.getElementById('login-step-1').classList.remove('hidden');
+  document.getElementById('login-step-2').classList.add('hidden');
+  pinBuffer = ''; pendingLogin = null;
+}
+function pinPress(d) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += d;
+  updatePinDots();
+  if (pinBuffer.length === 4) setTimeout(checkPin, 150);
+}
+function pinClear() { pinBuffer = ''; updatePinDots(); }
+function updatePinDots() {
+  for (let i = 0; i < 4; i++)
+    document.getElementById(`dot-${i}`).classList.toggle('filled', i < pinBuffer.length);
+}
+function checkPin() {
+  if (!pendingLogin) return;
+  if (pendingLogin.user.pin === pinBuffer) {
+    session = {type: pendingLogin.type, user: pendingLogin.user};
+    sessionStorage.setItem('uv_session', JSON.stringify(session));
+    if (session.type === 'producteur') {
+      showSemaineChoice();
+    } else {
+      showApp();
+    }
+  } else {
+    toast('\u274c Code incorrect');
+    pinBuffer = ''; updatePinDots();
+  }
+}
+
+/* ── CHOIX SEMAINE (producteur) ── */
+function getSemaineISO(baseDate, plusSept) {
+  let d = new Date(baseDate);
+  if (plusSept) d = new Date(d.getTime() + 7 * 86400000);
+  d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNum = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNum).padStart(2,'0')}`;
+}
+
+function getDatesSemaine(semaineId) {
+  // Retourne { debut, fin } sous forme DD/MM
+  try {
+    const [year, w] = semaineId.split('-W');
+    const jan4 = new Date(Date.UTC(+year, 0, 4));
+    const lundi = new Date(jan4);
+    lundi.setUTCDate(jan4.getUTCDate() - ((jan4.getUTCDay() || 7) - 1) + (+w - 1) * 7);
+    // Notre semaine commence le vendredi (lundi - 3)
+    const ven = new Date(lundi); ven.setUTCDate(lundi.getUTCDate() - 3);
+    const sam2 = new Date(lundi); sam2.setUTCDate(lundi.getUTCDate() + 5);
+    const fmt = d => `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}`;
+    return `${fmt(ven)}\u2192${fmt(sam2)}`;
+  } catch(e) { return ''; }
+}
+
+function showSemaineChoice() {
+  const now = new Date();
+  // Semaine courante = semaine ISO de la date d'aujourd'hui (sans le basculement auto)
+  const sCourante = getSemaineISO(now, false);
+  const sSuivante = getSemaineISO(now, true);
+
+  document.getElementById('login-step3-name').textContent = session.user.representant;
+  document.getElementById('label-s-courante').textContent = 'S' + sCourante.split('-W')[1];
+  document.getElementById('dates-s-courante').textContent = getDatesSemaine(sCourante);
+  document.getElementById('label-s-suivante').textContent = 'S' + sSuivante.split('-W')[1];
+  document.getElementById('dates-s-suivante').textContent = getDatesSemaine(sSuivante);
+
+  // Stocker les ids pour choisirSemaine()
+  document.getElementById('btn-semaine-courante').dataset.semaine = sCourante;
+  document.getElementById('btn-semaine-suivante').dataset.semaine = sSuivante;
+
+  document.getElementById('login-step-2').classList.add('hidden');
+  document.getElementById('login-step-3').classList.remove('hidden');
+}
+
+function choisirSemaine(choix) {
+  const btn = document.getElementById(choix === 'courante' ? 'btn-semaine-courante' : 'btn-semaine-suivante');
+  const semaineId = btn.dataset.semaine;
+  cache.semaineCourante = semaineId;
+  // Feedback visuel rapide
+  btn.style.background = 'var(--sable-dark)';
+  setTimeout(() => showApp(), 180);
+}
+
+function loginBackToPin() {
+  document.getElementById('login-step-3').classList.add('hidden');
+  document.getElementById('login-step-2').classList.remove('hidden');
+  pinBuffer = ''; updatePinDots();
+}
+function logout() {
+  if (!confirm('Se déconnecter ?')) return;
+  sessionStorage.removeItem('uv_session');
+  location.reload();
+}
+
+/* AFFICHAGE APP */
+function showLogin() {
+  document.getElementById('config-screen').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+}
+async function showApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  document.getElementById('header-user').textContent =
+    session.type === 'producteur' ? session.user.representant : session.user.nom;
+  if (session.type === 'producteur') {
+    document.getElementById('admin-tabs').classList.add('hidden');
+    document.getElementById('view-producteur').classList.remove('hidden');
+    loadProducteur();
+  } else {
+    document.getElementById('admin-tabs').classList.remove('hidden');
+    await populateAdminSemaineSelect();
+    switchTab('dashboard');
+  }
+}
+async function populateAdminSemaineSelect() {
+  const sel = document.getElementById('admin-semaine-select');
+  if (!sel) return;
+  const { data } = await sb.from('semaines').select('id, date_debut, date_fin').order('date_debut', { ascending: false });
+  if (!data) return;
+  sel.innerHTML = '';
+  data.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id;
+    const [yr, w] = s.id.split('-W');
+    const debut = new Date(s.date_debut).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit' });
+    const fin = new Date(s.date_fin).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit' });
+    o.textContent = `S${w} · ${debut}→${fin}`;
+    if (s.id === cache.semaineCourante) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function onAdminSemaineChange() {
+  const sel = document.getElementById('admin-semaine-select');
+  if (!sel || !sel.value) return;
+  cache.semaineCourante = sel.value;
+  // Recharger la vue active
+  const tab = document.querySelector('.tab.active[data-tab]')?.dataset?.tab;
+  if (tab === 'dashboard') loadAdmin();
+  else if (tab === 'consolide') loadConsolidation();
+  else if (tab === 'detail') loadDetail();
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  ['dashboard','consolide','detail','recap-prod','recap-jour','adherents','quinzaine'].forEach(t =>
+    document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tab));
+  if (tab === 'dashboard') loadAdmin();
+  else if (tab === 'consolide') loadConsolidation();
+  else if (tab === 'detail') loadDetail();
+  else if (tab === 'recap-prod') initRecapProd();
+  else if (tab === 'recap-jour') initRecapJour();
+  else if (tab === 'adherents') renderAdherents();
+  else if (tab === 'quinzaine') loadQuinzaine();
+}
+
+/* VUE PRODUCTEUR */
+function switchProdTab(tab) {
+  document.querySelectorAll('[data-ptab]').forEach(t => t.classList.toggle('active', t.dataset.ptab === tab));
+  document.getElementById('prod-view-planification').classList.toggle('hidden', tab !== 'planification');
+  document.getElementById('prod-view-prevision').classList.toggle('hidden', tab !== 'prevision');
+}
+
+/* TABLE CP PRODUCTEURS (depuis CP_PROD.xlsx, croisé avec adherents) */
+const CP_PRODUCTEURS = {
+  // P8995 - ABOUYAZID ABDELLAH (ex SIMONETTI)
+  'ABOUYAZID':13940,'SIMONETTI':13620,
+  // P8310 - AURI-BIO
+  'AURI-BIO':30800,'AURILLASSES':30800,
+  // P105 - BAGNOLET
+  'BAGNOLET':13150,'BAGNOL':13150,
+  // P3338 - BOIS JOLI
+  'BOIS JOLI':30127,
+  // P12 - CAPIC
+  'CAPIC':20230,
+  // P4450 - LES CHARDONS
+  'CHARDONS':30127,
+  // P3298 - SOURCE DU LEVANT
+  'SOURCE DU LEVANT':30127,
+  // P13 - CHAY
+  'CHAY':30210,
+  // P2328 - COMBE
+  'COMBE':30127,
+  // P1915 - DELORME
+  'DELORME':13990,
+  // P3290 - DEUX COLLINES
+  'DEUX COLLINES':30800,
+  // P33 - EC PRODUCTION
+  'EC PRODUCTION':13310,'TERRE DE CHRISTAL':13310,
+  // P160 - ESCAND
+  'ESCAND':30120,
+  // P8360 - FONTAINE
+  'FONTAINE':30127,
+  // P178 - FRANCE GRENADES
+  'FRANCEGRENADES':30640,'FRANCE GRENADES':30640,
+  // P6560 - NANIA
+  'NANIA':13310,
+  // P9901 - NEGRIER
+  'NEGRIER':30350,
+  // P3271 - PIMPOUNE
+  'PIMPOUNE':30800,
+  // P122 - SALEILLES
+  'SALEILLES':30200,
+  // P8995 - ABOUYAZID
+  'ABOUYAZID ABDELLAH':13940,
+  // P3220 - SOURCE DU BOIS
+  'SOURCE DU BOIS':30800,
+  // P27 - SAINT VICTOR
+  'SAINT VICTOR':13150,'ST VICTOR':13150,
+  // P3241 - TCHOUKOUMBE
+  'TCHOUKOUMBE':30127,'TCHOUKOUUMBE':30127,
+  // P311 - TREMOULET
+  'TREMOULET':30490,'COTES DES BARRES':30490,
+  // P156 - VIDAL
+  'VIDAL':30800,
+  // P5809 - MANZONE
+  'MANZONE':30127,
+  // P29 - MAS DU RIEU
+  'MAS DU RIEU':30127,
+  // P153 - MOREA
+  'MOREA':13130,
+  // P8880 - VIDOT
+  'VIDOT':30800,
+  // P3298 - CHARDON / SOURCE DU LEVANT
+  'CHARDON':30127,
+  // P3290 - PELLISSIER
+  'PELLISSIER':30800,
+  // P3338 - PAILLAT
+  'PAILLAT':30127,
+  // P3271 - MATHIEU
+  'MATHIEU':30800,
+  // P3241 - CHAIGNEAU
+  'CHAIGNEAU':30127,
+  // P3220 - DUPLISSY
+  'DUPLISSY':30800,
+  // P311 - TREMOULET
+  'TREMOULET ERIC':30490,
+  // P29 - FERAUT
+  'FERAUT':30127
+};
+
+function getCPForAdherent(user) {
+  const nom = ((user.nom_exploitation || user.representant || '') + ' ' + (user.representant || '')).toUpperCase();
+  for (const [key, cp] of Object.entries(CP_PRODUCTEURS)) {
+    if (nom.includes(key.toUpperCase())) return cp;
+  }
+  return null;
+}
+
+/* MÉTÉO OPEN-METEO (gratuit, sans clé) */
+const CP_COORDS = {
+  13130:{lat:43.56,lon:5.21}, 13150:{lat:43.51,lon:5.36}, 13310:{lat:43.49,lon:5.33},
+  13620:{lat:43.57,lon:5.51}, 13910:{lat:43.44,lon:5.18}, 13940:{lat:43.52,lon:5.25},
+  13990:{lat:43.45,lon:5.04}, 20230:{lat:41.55,lon:9.27}, 30120:{lat:44.02,lon:4.37},
+  30127:{lat:43.86,lon:4.42}, 30133:{lat:43.67,lon:4.88}, 30200:{lat:43.84,lon:4.64},
+  30210:{lat:43.96,lon:4.28}, 30220:{lat:44.01,lon:4.46}, 30230:{lat:43.93,lon:4.22},
+  30340:{lat:44.11,lon:4.06}, 30350:{lat:44.14,lon:4.18}, 30490:{lat:44.12,lon:4.52},
+  30570:{lat:43.92,lon:4.49}, 30600:{lat:44.22,lon:4.39}, 30640:{lat:43.81,lon:4.71},
+  30800:{lat:43.84,lon:4.63}, 84250:{lat:43.90,lon:5.28}, 84840:{lat:44.01,lon:5.23}
+};
+
+function getWeatherIcon(wmo, size=36) {
+  const s = size;
+  const h = Math.round(s/2);
+  if (wmo === 0) return `<svg width="${s}" height="${s}" viewBox="0 0 44 44">
+    <style>@keyframes spin2{to{transform:rotate(360deg)}}</style>
+    <g style="transform-origin:22px 22px;animation:spin2 8s linear infinite">
+      <circle cx="22" cy="22" r="8" fill="#F5A623"/>
+      <line x1="22" y1="4" x2="22" y2="10" stroke="#F5A623" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="22" y1="34" x2="22" y2="40" stroke="#F5A623" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="4" y1="22" x2="10" y2="22" stroke="#F5A623" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="34" y1="22" x2="40" y2="22" stroke="#F5A623" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="9" y1="9" x2="13" y2="13" stroke="#F5A623" stroke-width="2" stroke-linecap="round"/>
+      <line x1="31" y1="31" x2="35" y2="35" stroke="#F5A623" stroke-width="2" stroke-linecap="round"/>
+      <line x1="35" y1="9" x2="31" y2="13" stroke="#F5A623" stroke-width="2" stroke-linecap="round"/>
+      <line x1="9" y1="35" x2="13" y2="31" stroke="#F5A623" stroke-width="2" stroke-linecap="round"/>
+    </g></svg>`;
+  if (wmo <= 2) return `<svg width="${s}" height="${s}" viewBox="0 0 44 44">
+    <circle cx="22" cy="22" r="8" fill="#F5A623" opacity=".9"/>
+    <circle cx="18" cy="28" r="5" fill="#B0BEC5"/>
+    <circle cx="26" cy="25" r="7" fill="#CFD8DC"/>
+    <rect x="12" y="27" width="20" height="8" rx="4" fill="#CFD8DC"/>
+    </svg>`;
+  if (wmo <= 48) return `<svg width="${s}" height="${s}" viewBox="0 0 44 44">
+    <circle cx="17" cy="20" r="6" fill="#90A4AE"/>
+    <circle cx="26" cy="16" r="9" fill="#B0BEC5"/>
+    <rect x="10" y="22" width="24" height="10" rx="5" fill="#B0BEC5"/>
+    </svg>`;
+  if (wmo <= 67) return `<svg width="${s}" height="${s}" viewBox="0 0 44 44">
+    <style>@keyframes fall2{0%{transform:translateY(0);opacity:1}100%{transform:translateY(8px);opacity:0}}</style>
+    <circle cx="17" cy="18" r="6" fill="#78909C"/>
+    <circle cx="26" cy="14" r="8" fill="#90A4AE"/>
+    <rect x="10" y="20" width="24" height="9" rx="4.5" fill="#90A4AE"/>
+    <g style="animation:fall2 .8s ease-in infinite">
+      <line x1="17" y1="32" x2="15" y2="40" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="23" y1="32" x2="21" y2="40" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="29" y1="32" x2="27" y2="40" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round"/>
+    </g></svg>`;
+  if (wmo <= 77) return `<svg width="${s}" height="${s}" viewBox="0 0 44 44">
+    <style>@keyframes fall3{0%{transform:translateY(0);opacity:1}100%{transform:translateY(7px);opacity:0}}</style>
+    <circle cx="17" cy="18" r="6" fill="#78909C"/>
+    <circle cx="26" cy="14" r="8" fill="#90A4AE"/>
+    <rect x="10" y="20" width="24" height="9" rx="4.5" fill="#90A4AE"/>
+    <g style="animation:fall3 .6s ease-in infinite">
+      <line x1="17" y1="32" x2="15" y2="37" stroke="#B0BEC5" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="23" y1="32" x2="21" y2="37" stroke="#B0BEC5" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="29" y1="32" x2="27" y2="37" stroke="#B0BEC5" stroke-width="2.2" stroke-linecap="round"/>
+    </g></svg>`;
+  // orage
+  return `<svg width="${s}" height="${s}" viewBox="0 0 44 44">
+    <style>@keyframes flash{0%,90%,100%{opacity:0}95%{opacity:1}}</style>
+    <circle cx="17" cy="16" r="6" fill="#546E7A"/>
+    <circle cx="26" cy="12" r="8" fill="#607D8B"/>
+    <rect x="10" y="18" width="24" height="9" rx="4.5" fill="#607D8B"/>
+    <path d="M24 28 L20 36 L24 34 L21 42" stroke="#F5C518" stroke-width="2" fill="none" stroke-linecap="round" style="animation:flash 2s infinite"/>
+    </svg>`;
+}
+
+function wmoLabel(wmo) {
+  if (wmo === 0) return 'Ensoleillé';
+  if (wmo <= 2) return 'Éclaircies';
+  if (wmo <= 48) return 'Nuageux';
+  if (wmo <= 55) return 'Bruine';
+  if (wmo <= 67) return 'Pluie';
+  if (wmo <= 77) return 'Neige';
+  return 'Orage';
+}
+
+function impactMeteo(tMin, tMax, precip, windMax, produits) {
+  const msgs = [];
+  if (precip > 20) msgs.push("Fortes pluies : risque de maladies fongiques — surveiller l'aération sous serre.");
+  else if (precip > 8) msgs.push("Pluies modérées : humidité favorable mais surveiller les cultures au sol.");
+  if (tMin < 8) msgs.push("Nuits fraîches sous 8°C : protéger les jeunes plants sensibles au froid.");
+  if (tMax > 32) msgs.push("Chaleur intense : arrosage accru recommandé, récolte tôt le matin.");
+  if (windMax > 50) msgs.push("Vents forts : risque de verse sur les cultures hautes.");
+  if (msgs.length === 0) msgs.push("Conditions climatiques favorables pour la semaine.");
+  return msgs.join(' ');
+}
+
+async function loadMeteoProducteur() {
+  const el = document.getElementById('prod-meteo');
+  if (!el) return;
+  const user = session.user;
+  const cp = getCPForAdherent(user);
+  if (!cp) { el.innerHTML = ''; return; }
+  const coords = CP_COORDS[cp];
+  if (!coords) { el.innerHTML = ''; return; }
+
+  // Toujours utiliser la semaine calendaire RÉELLE (pas S+1) pour la météo
+  function getRealISOWeek() {
+    let d = new Date();
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const day = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - day);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNum = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    return { yr: d.getUTCFullYear(), wNum: weekNum };
+  }
+  const { yr, wNum } = getRealISOWeek();
+  const yr2025 = yr - 1;
+
+  function mondayOfWeek(year, week) {
+    const jan4 = new Date(Date.UTC(year, 0, 4));
+    const lundi = new Date(jan4);
+    lundi.setUTCDate(jan4.getUTCDate() - ((jan4.getUTCDay() || 7) - 1) + (week - 1) * 7);
+    return lundi;
+  }
+  const lundi2026 = mondayOfWeek(yr, wNum);
+  const sam2026 = new Date(lundi2026); sam2026.setUTCDate(lundi2026.getUTCDate() + 6);
+  const lundi2025 = mondayOfWeek(yr2025, wNum);
+  const sam2025 = new Date(lundi2025); sam2025.setUTCDate(lundi2025.getUTCDate() + 6);
+
+  const fmt = d => d.toISOString().slice(0,10);
+
+  el.innerHTML = `<div style="background:rgba(55,138,221,.06);border:1px solid rgba(55,138,221,.2);border-radius:10px;padding:12px 14px;font-size:.82rem;color:var(--encre-soft)">☁️ Chargement météo CP ${cp}…</div>`;
+
+  try {
+    // Les 2 appels sont indépendants — l'archive 2025 peut échouer sans bloquer
+    const [r2026, r2025] = await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max&start_date=${fmt(lundi2026)}&end_date=${fmt(sam2026)}&timezone=Europe%2FParis`).then(r=>r.json()).catch(()=>({})),
+      fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${coords.lat}&longitude=${coords.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max&start_date=${fmt(lundi2025)}&end_date=${fmt(sam2025)}&timezone=Europe%2FParis`).then(r=>r.json()).catch(()=>({}))
+    ]);
+
+    const d26 = r2026.daily || {}; const d25 = r2025.daily || {};
+    const days26 = (d26.time || []).length;
+    const days25 = (d25.time || []).length;
+
+    const avg = (arr, key) => arr.length ? Math.round(arr.reduce((s,i)=>s+(parseFloat(d26[key]?.[i])||0),0)/arr.length) : 0;
+    const avg25 = (arr, key) => arr.length ? Math.round(arr.reduce((s,i)=>s+(parseFloat(d25[key]?.[i])||0),0)/arr.length) : 0;
+    const sum = (arr, key) => arr.length ? Math.round(arr.reduce((s,i)=>s+(parseFloat(d26[key]?.[i])||0),0)) : 0;
+    const sum25 = (arr, key) => arr.length ? Math.round(arr.reduce((s,i)=>s+(parseFloat(d25[key]?.[i])||0),0)) : 0;
+    const idx26 = [...Array(days26).keys()];
+    const idx25 = [...Array(days25).keys()];
+
+    const tMin26 = avg(idx26,'temperature_2m_min'), tMax26 = avg(idx26,'temperature_2m_max');
+    const tMin25 = avg25(idx25,'temperature_2m_min'), tMax25 = avg25(idx25,'temperature_2m_max');
+    const prec26 = sum(idx26,'precipitation_sum'), prec25 = sum25(idx25,'precipitation_sum');
+    const wind26 = avg(idx26,'windspeed_10m_max'), wind25 = avg25(idx25,'windspeed_10m_max');
+    const wmo26 = d26.weathercode?.[Math.floor(days26/2)] ?? 0;
+    const wmo25 = d25.weathercode?.[Math.floor(days25/2)] ?? 0;
+
+    const diffPrec = prec26 - prec25;
+    const diffTemp = tMax26 - tMax25;
+    const prodNoms = Array.from(document.querySelectorAll('[data-total]')).map(e=>e.dataset.total);
+    const impact = impactMeteo(tMin26, tMax26, prec26, wind26, prodNoms);
+
+    const diffCol = v => v > 0 ? `<span style="color:#A32D2D">+${v}</span>` : v < 0 ? `<span style="color:#3B6D11">${v}</span>` : `<span style="color:var(--encre-soft)">=${v}</span>`;
+
+    el.innerHTML = `
+    <div style="background:var(--blanc);border:1px solid var(--sable-dark);border-radius:12px;padding:14px 16px">
+      <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.8px;color:var(--olive-dark);font-weight:700;margin-bottom:12px">
+        ☁️ Météo S${wNum} · CP ${cp} &nbsp;|&nbsp; comparatif ${yr} vs ${yr2025}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div style="font-size:.72rem;font-weight:600;color:var(--olive-dark);margin-bottom:8px">S${wNum} · ${yr}</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            ${getWeatherIcon(wmo26,36)}
+            <div>
+              <div style="font-size:.85rem;font-weight:600;color:var(--encre)">${tMin26}° / ${tMax26}°C</div>
+              <div style="font-size:.75rem;color:var(--encre-soft)">${wmoLabel(wmo26)} · ${prec26} mm · vent ${wind26} km/h</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:.72rem;font-weight:600;color:var(--encre-soft);margin-bottom:8px">S${wNum} · ${yr2025}</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            ${getWeatherIcon(wmo25,36)}
+            <div>
+              <div style="font-size:.85rem;color:var(--encre-soft)">${tMin25}° / ${tMax25}°C</div>
+              <div style="font-size:.75rem;color:var(--encre-soft)">${wmoLabel(wmo25)} · ${prec25} mm · vent ${wind25} km/h</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:8px;padding-top:8px;border-top:1px solid var(--sable);font-size:.78rem;color:var(--encre-soft)">
+        <span>🌡 Temp : ${diffCol(diffTemp)}°C vs l'an dernier</span>
+        <span>🌧 Pluie : ${diffCol(diffPrec)} mm vs l'an dernier</span>
+      </div>
+      <div style="margin-top:10px;background:rgba(232,163,61,.1);border-radius:8px;padding:8px 12px;font-size:.8rem;color:#633806;line-height:1.5">
+        ⚡ ${impact}
+      </div>
+    </div>`;
+  } catch(e) {
+    el.innerHTML = `<div style="font-size:.8rem;color:var(--encre-soft);padding:8px">Météo indisponible.</div>`;
+    console.warn('Météo error:', e);
+  }
+}
+
+function getVeggieIcon(nom) {
+  const n = (nom || '').toUpperCase();
+  // COURGETTE
+  if (n.includes('COURGETTE')) return `<svg width="32" height="32" viewBox="0 0 52 52">
+    <ellipse cx="26" cy="36" rx="18" ry="11" fill="#4A9422"/>
+    <ellipse cx="26" cy="36" rx="11" ry="11" fill="#3B7A1A" opacity=".25"/>
+    <ellipse cx="12" cy="36" rx="6" ry="9" fill="#5CAD2A" opacity=".6"/>
+    <ellipse cx="40" cy="36" rx="6" ry="9" fill="#5CAD2A" opacity=".6"/>
+    <path d="M26 25 Q30 13 37 11 Q33 19 28 25Z" fill="#2E7A10"/>
+    <path d="M26 25 Q22 13 15 11 Q19 19 24 25Z" fill="#4A9422"/>
+    <path d="M16 31 Q26 27 36 31" stroke="#2E7A10" stroke-width="1.2" fill="none" opacity=".5"/>
+    <path d="M14 37 Q26 33 38 37" stroke="#2E7A10" stroke-width="1" fill="none" opacity=".4"/>
+    <ellipse cx="26" cy="44" rx="7" ry="3" fill="#2A6010" opacity=".4"/>
+  </svg>`;
+  if (n.includes('CONCOMBRE')) return `<svg width="32" height="32" viewBox="0 0 52 52">
+    <ellipse cx="26" cy="32" rx="8" ry="18" fill="#3D8B22"/>
+    <ellipse cx="26" cy="32" rx="3.5" ry="18" fill="#2A6B14" opacity=".35"/>
+    <ellipse cx="19" cy="32" rx="2.5" ry="14" fill="#2A6B14" opacity=".2"/>
+    <ellipse cx="33" cy="32" rx="2.5" ry="14" fill="#2A6B14" opacity=".2"/>
+    <path d="M26 14 Q31 7 35 6 Q32 11 28 14Z" fill="#2E7A10"/>
+    <path d="M26 14 Q21 7 17 6 Q20 11 24 14Z" fill="#3B9A1A" opacity=".8"/>
+    <ellipse cx="26" cy="47" rx="5" ry="2.5" fill="#1E5010" opacity=".4"/>
+    <path d="M20 24 Q32 24 32 24" stroke="#2A6B14" stroke-width="1" fill="none" opacity=".3"/>
+    <path d="M19 32 Q33 32 33 32" stroke="#2A6B14" stroke-width="1" fill="none" opacity=".3"/>
+    <path d="M20 40 Q32 40 32 40" stroke="#2A6B14" stroke-width="1" fill="none" opacity=".3"/>
+  </svg>`;
+  if (n.includes('TOMATE')) return `<svg width="32" height="32" viewBox="0 0 52 52">
+    <circle cx="26" cy="32" r="18" fill="#D03020"/>
+    <path d="M10 27 Q26 20 42 27" stroke="#B02010" stroke-width="1.5" fill="none" opacity=".35"/>
+    <path d="M12 35 Q26 29 40 35" stroke="#B02010" stroke-width="1.2" fill="none" opacity=".3"/>
+    <ellipse cx="17" cy="23" rx="5" ry="3.5" fill="#FF6050" opacity=".2"/>
+    <path d="M20 14 Q23 7 26 6 Q29 7 32 14" stroke="#2E7A10" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <path d="M26 6 Q31 3 35 6" stroke="#3B9A1A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <path d="M26 14 Q18 8 13 14 Q20 12 26 14Z" fill="#2E7A10" opacity=".9"/>
+  </svg>`;
+  if (n.includes('POIVRON') || n.includes('POIVRE')) return `<svg width="32" height="32" viewBox="0 0 52 52">
+    <path d="M26 13 Q38 15 40 28 Q40 44 26 46 Q12 44 12 28 Q14 15 26 13Z" fill="#D05018"/>
+    <path d="M26 13 Q38 15 40 28 Q40 44 26 46 Q12 44 12 28 Q14 15 26 13Z" fill="#FF8040" opacity=".12"/>
+    <path d="M21 11 Q23 5 26 4 Q29 5 31 11" stroke="#2E7A10" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <path d="M17 24 Q35 24 35 24" stroke="#B03A10" stroke-width="1" opacity=".25"/>
+    <path d="M16 32 Q36 32 36 32" stroke="#B03A10" stroke-width="1" opacity=".25"/>
+    <ellipse cx="18" cy="20" rx="3.5" ry="2.5" fill="#FF9060" opacity=".2"/>
+  </svg>`;
+  if (n.includes('SALADE') || n.includes('LAITUE') || n.includes('BATAVIA')) return `<svg width="32" height="32" viewBox="0 0 52 52">
+    <ellipse cx="26" cy="36" rx="18" ry="12" fill="#6BBF3E"/>
+    <path d="M12 32 Q26 20 40 32" fill="#4E9A2B"/>
+    <path d="M9 38 Q26 26 43 38" fill="#5AAF30" opacity=".5"/>
+    <path d="M14 28 Q26 16 38 28" fill="#3A8A1A" opacity=".45"/>
+    <ellipse cx="26" cy="38" rx="8" ry="4" fill="#8DD45A" opacity=".35"/>
+  </svg>`;
+  if (n.includes('CAROTTE')) return `<svg width="32" height="32" viewBox="0 0 52 52">
+    <path d="M26 12 Q36 15 36 30 Q34 44 26 46 Q18 44 16 30 Q16 15 26 12Z" fill="#E8722A"/>
+    <path d="M22 10 Q24 4 26 3 Q28 4 30 10" stroke="#3A9E22" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M26 3 Q30 1 33 4" stroke="#3A9E22" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M18 22 Q34 22 34 22" stroke="#C85E1A" stroke-width="1" opacity=".35"/>
+    <path d="M17 30 Q35 30 35 30" stroke="#C85E1A" stroke-width="1" opacity=".35"/>
+    <ellipse cx="20" cy="18" rx="3" ry="2" fill="#FFB060" opacity=".2"/>
+  </svg>`;
+  if (n.includes('HARICOT')) return `<svg width="32" height="32" viewBox="0 0 52 52">
+    <path d="M14 10 Q34 8 38 22 Q42 34 32 42 Q22 46 14 38 Q6 28 14 10Z" fill="#5C9E2E"/>
+    <path d="M14 10 Q34 8 38 22 Q42 34 32 42 Q22 46 14 38 Q6 28 14 10Z" fill="#8DD45A" opacity=".15"/>
+    <path d="M14 10 Q24 28 32 42" stroke="#3B7A1A" stroke-width="1.2" fill="none" opacity=".45"/>
+    <ellipse cx="22" cy="28" rx="4" ry="6" fill="#3B7A1A" opacity=".2"/>
+  </svg>`;
+  if (n.includes('AUBERGINE')) return `<svg width="32" height="32" viewBox="0 0 52 52">
+    <ellipse cx="26" cy="32" rx="13" ry="14" fill="#6B3FA0"/>
+    <ellipse cx="26" cy="32" rx="13" ry="14" fill="#9060C0" opacity=".15"/>
+    <path d="M26 18 Q30 10 35 8 Q32 14 28 18Z" fill="#2E8B1A"/>
+    <path d="M26 18 Q22 10 17 8 Q20 14 24 18Z" fill="#3A9E22"/>
+    <ellipse cx="18" cy="24" rx="3" ry="2" fill="#fff" opacity=".18"/>
+  </svg>`;
+  if (n.includes('FRAISE')) return `<svg width="32" height="32" viewBox="0 0 52 52">
+    <path d="M26 10 Q40 13 42 28 Q40 42 26 44 Q12 42 10 28 Q12 13 26 10Z" fill="#E03040"/>
+    <path d="M20 8 Q23 3 26 3 Q29 3 32 8" stroke="#3A9E22" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <circle cx="19" cy="24" r="1.5" fill="#fff" opacity=".45"/>
+    <circle cx="28" cy="19" r="1.5" fill="#fff" opacity=".45"/>
+    <circle cx="33" cy="30" r="1.5" fill="#fff" opacity=".45"/>
+    <circle cx="20" cy="34" r="1.5" fill="#fff" opacity=".45"/>
+    <circle cx="30" cy="38" r="1.5" fill="#fff" opacity=".45"/>
+  </svg>`;
+  if (n.includes('POMME') && !n.includes('TERRE')) return `<svg width="32" height="32" viewBox="0 0 52 52">
+    <path d="M26 12 Q40 12 42 26 Q42 42 26 44 Q10 42 10 26 Q12 12 26 12Z" fill="#D04A30"/>
+    <path d="M26 11 Q26 5 29 4" stroke="#5C3A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M29 4 Q34 2 36 7" stroke="#3A9E22" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <path d="M10 26 Q26 21 42 26" stroke="#B83328" stroke-width="1.2" opacity=".25" fill="none"/>
+    <ellipse cx="16" cy="20" rx="3.5" ry="2.5" fill="#fff" opacity=".18"/>
+  </svg>`;
+  if (n.includes('POIREAU')) return `<svg width="32" height="32" viewBox="0 0 52 52">
+    <rect x="20" y="26" width="12" height="20" rx="6" fill="#E8E8D0"/>
+    <ellipse cx="26" cy="26" rx="7" ry="4" fill="#D0D0B0"/>
+    <path d="M20 26 Q26 16 32 26" fill="#5C9E2E"/>
+    <path d="M16 22 Q26 10 36 22" fill="#4A8C20"/>
+    <path d="M14 28 Q26 14 38 28" fill="#3B7A1A" opacity=".4"/>
+  </svg>`;
+  return `<svg width="32" height="32" viewBox="0 0 52 52">
+    <path d="M26 8 Q42 11 42 28 Q42 44 26 44 Q10 44 10 28 Q10 11 26 8Z" fill="#5C9E2E"/>
+    <path d="M26 44 Q26 26 26 8" stroke="#3B7A1A" stroke-width="1.5" fill="none" opacity=".4"/>
+    <path d="M26 28 Q16 20 10 22" stroke="#3B7A1A" stroke-width="1.2" fill="none" opacity=".3"/>
+    <path d="M26 28 Q36 20 42 22" stroke="#3B7A1A" stroke-width="1.2" fill="none" opacity=".3"/>
+  </svg>`;
+}
+async function loadProducteur() {
+  showSync('syncing', '☁️ Chargement…');
+  const semaine = cache.semaineCourante;
+  const saison = cache.params.saison_active || 'Hiver';
+  const adherentId = session.user.id;
+
+  const wNum = semaine.split('-W')[1];
+  const semaineNaturelle = getSemaineISO(new Date(), false);
+  const isSuivante = semaine !== semaineNaturelle;
+  document.getElementById('prod-week').innerHTML = `S${wNum}` +
+    (isSuivante ? ' <span style="font-size:.65rem;background:var(--safran);color:var(--encre);padding:1px 6px;border-radius:8px;font-weight:700;vertical-align:middle">S+1</span>' : '');
+  document.getElementById('prod-saison').textContent = saison;
+
+  await ensureSemaine(semaine);
+
+  const [statutR, prevsR] = await Promise.all([
+    sb.from('statuts_semaine').select('*').eq('semaine_id', semaine).eq('adherent_id', adherentId).maybeSingle(),
+    sb.from('previsions').select('*').eq('semaine_id', semaine).eq('adherent_id', adherentId)
+  ]);
+
+  const statut = statutR.data?.statut || 'NON_SAISI';
+  const commentaire = statutR.data?.commentaire || '';
+  document.getElementById('prod-statut').textContent = statut.replace('_',' ');
+  document.getElementById('prod-statut').className = 'statut-pill statut-' + statut;
+  document.getElementById('prod-commentaire').value = commentaire;
+
+  const prevsByCode = {};
+  (prevsR.data || []).forEach(p => prevsByCode[p.produit_code] = p);
+  let totalSem = 0;
+  Object.values(prevsByCode).forEach(p => totalSem += parseFloat(p.total) || 0);
+  document.getElementById('prod-total').textContent = totalSem + ' colis';
+
+  // Filtrer produits selon adhérent + saison
+  const produitsAdherent = cache.adherentProduits
+    .filter(ap => ap.adherent_id === adherentId && ap.saison === saison)
+    .map(ap => ap.produit_code);
+
+  let produits;
+  if (produitsAdherent.length > 0) {
+    produits = cache.produits.filter(p => p.saison === saison && produitsAdherent.includes(p.code));
+  } else {
+    produits = cache.produits.filter(p => p.saison === saison);
+  }
+  // Trier alphabétiquement par variété
+  produits.sort((a, b) => (a.variete || '').localeCompare(b.variete || '', 'fr'));
+
+  const headers = buildHeaders(cache.semaineCourante);
+  const fields = ['vendredi1', 'samedi', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi2', 'samedi2'];
+
+  let html = `<table class="prev-table"><thead><tr>
+    <th class="produit-col">Produit</th>
+    ${headers.map(h => `<th>${h}</th>`).join('')}
+    <th class="total-col">TOTAL</th>
+  </tr></thead><tbody>`;
+
+  produits.forEach(prod => {
+    const p = prevsByCode[prod.code] || {};
+    const total = fields.reduce((s, f) => s + (parseFloat(p[f]) || 0), 0);
+    const inputs = fields.map(f =>
+      `<td><input type="number" min="0" step="1" data-code="${prod.code}" data-field="${f}" value="${p[f] || ''}" placeholder="0" onchange="onCellChange(this)"></td>`
+    ).join('');
+    html += `<tr>
+      <td class="produit-cell"><span style="display:flex;align-items:center;gap:8px">${getVeggieIcon(prod.variete)}<span><strong>${prod.variete}</strong><span class="emballage">${prod.emballage}</span></span></span></td>
+      ${inputs}
+      <td class="total-cell" data-total="${prod.code}">${total || ''}</td>
+    </tr>`;
+  });
+
+  // Ligne d'ajout de produit : menu déroulant + bouton produit non listé
+  const produitsDispos = cache.produits.filter(p => p.saison === saison && !produits.find(x => x.code === p.code));
+  const optionsProduits = produitsDispos.map(p =>
+    `<option value="${p.code}">${p.variete} — ${p.emballage}</option>`
+  ).join('');
+  html += `<tr style="background:rgba(232,163,61,.05)">
+    <td colspan="${fields.length + 2}" style="padding:10px 12px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <select id="prod-add-select" style="flex:1;min-width:200px;padding:7px 10px;border:2px solid var(--sable-dark);border-radius:8px;background:var(--sable-light);font-size:.82rem">
+          <option value="">— Choisir un produit à ajouter —</option>
+          ${optionsProduits}
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="ajouterProduitExistant()">➕ Ajouter</button>
+        <button class="btn btn-ghost btn-sm" onclick="ouvrirModalProduit()" style="border-style:dashed">+ Nouveau produit non listé</button>
+      </div>
+    </td>
+  </tr>`;
+
+  html += '</tbody></table>';
+  document.getElementById('prod-table-wrap').innerHTML = html;
+  showSync('ok', '☁️ Synchronisé');
+  loadProducteurQuinzaine();
+  loadMeteoProducteur();
+}
+
+async function loadProducteurQuinzaine() {
+  const adherentId = session.user.id;
+  const annee = new Date().getFullYear();
+  const { data, error } = await sb.from('previsions_quinzaine')
+    .select('*').eq('adherent_id', adherentId).order('mois').order('quinzaine');
+
+  const el = document.getElementById('prod-qz-table');
+  const rappelEl = document.getElementById('prod-qz-rappel');
+  if (error || !data || data.length === 0) {
+    el.innerHTML = '<p class="empty-state" style="padding:20px">Aucune prévision quinzaine saisie.</p>';
+    if (rappelEl) rappelEl.innerHTML = '';
+    return;
+  }
+
+  // Construire le rappel quinzaine courante — compact, même ordre que la prévision
+  if (rappelEl) {
+    const currentRows = data.filter(r => isQuinzaineCourante(r.mois, r.quinzaine, annee));
+    if (currentRows.length > 0) {
+      const qLabel = currentRows[0].mois.charAt(0) + currentRows[0].mois.slice(1).toLowerCase() + ' ' + currentRows[0].quinzaine;
+      const semaines = semainesDeLaQuinzaine(currentRows[0].mois, currentRows[0].quinzaine, annee);
+      const totalQz = currentRows.reduce((s, r) => s + (parseFloat(r.quantite) || 0), 0);
+
+      // Trier dans le même ordre que cache.produits (matching partiel sur variete)
+      function getOrdre(nomQz) {
+        const n = nomQz.toUpperCase();
+        // Cherche d'abord un match exact
+        let found = cache.produits.find(p => p.variete.toUpperCase() === n);
+        // Sinon match partiel : le nom quinzaine contient les mots-clés de la variete
+        if (!found) found = cache.produits.find(p => {
+          const v = p.variete.toUpperCase();
+          const words = v.split(' ').filter(w => w.length > 3);
+          return words.length > 0 && words.every(w => n.includes(w));
+        });
+        // Sinon l'inverse : la variete contient les mots du nom quinzaine
+        if (!found) found = cache.produits.find(p => {
+          const words = n.split(' ').filter(w => w.length > 3);
+          return words.length > 0 && words.every(w => p.variete.toUpperCase().includes(w));
+        });
+        return found ? found.ordre : 999;
+      }
+      currentRows.sort((a, b) => getOrdre(a.produit_nom) - getOrdre(b.produit_nom));
+
+      let rappelHtml = `<div style="background:rgba(77,139,58,.06);border:1px solid rgba(77,139,58,.2);border-radius:8px;padding:8px 12px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:.72rem;text-transform:uppercase;letter-spacing:.7px;color:var(--olive-dark);font-weight:700">
+            📅 ${qLabel} <span style="background:var(--olive);color:var(--sable);padding:1px 6px;border-radius:6px;margin-left:4px;font-size:.65rem">${semaines}</span>
+          </span>
+          <span style="font-size:.75rem;font-weight:700;color:var(--olive-dark)">${totalQz.toLocaleString('fr-FR')} kg total</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:.78rem">`;
+      currentRows.forEach(r => {
+        rappelHtml += `<tr style="border-top:1px solid rgba(77,139,58,.12)">
+          <td style="padding:4px 6px;display:flex;align-items:center;gap:6px">
+            <span style="flex-shrink:0">${getVeggieIcon(r.produit_nom).replace('width="32" height="32"','width="22" height="22"')}</span>
+            <span style="color:var(--encre);font-weight:600">${r.produit_nom}</span>
+          </td>
+          <td style="padding:4px 8px;text-align:right;font-weight:700;color:var(--olive-dark);white-space:nowrap">
+            ${parseFloat(r.quantite).toLocaleString('fr-FR')} <span style="font-weight:400;color:var(--encre-soft);font-size:.72rem">${r.unite || 'kg'}</span>
+          </td>
+        </tr>`;
+      });
+      rappelHtml += `</table></div>`;
+      rappelEl.innerHTML = rappelHtml;
+    } else {
+      rappelEl.innerHTML = '';
+    }
+  }
+
+  const MOIS_ORDER = ['JANVIER','FEVRIER','MARS','AVRIL','MAI','JUIN','JUILLET','AOUT','SEPTEMBRE','OCTOBRE','NOVEMBRE','DECEMBRE'];
+  const colsMap = {};
+  data.forEach(r => { const k = `${r.mois}|${r.quinzaine}`; if (!colsMap[k]) colsMap[k] = {mois:r.mois, quinzaine:r.quinzaine}; });
+  const cols = Object.values(colsMap).sort((a,b) => {
+    return (MOIS_ORDER.indexOf(a.mois.toUpperCase()) - MOIS_ORDER.indexOf(b.mois.toUpperCase())) * 10 + a.quinzaine.localeCompare(b.quinzaine);
+  });
+
+  const produitsSet = {};
+  data.forEach(r => { if (!produitsSet[r.produit_nom]) produitsSet[r.produit_nom] = r.unite || 'kg'; });
+
+  const dataIdx = {};
+  data.forEach(r => {
+    if (!dataIdx[r.produit_nom]) dataIdx[r.produit_nom] = {};
+    dataIdx[r.produit_nom][`${r.mois}|${r.quinzaine}`] = parseFloat(r.quantite) || 0;
+  });
+
+  let html = '<table class="prev-table"><thead><tr><th class="produit-col">Produit</th>';
+  cols.forEach(c => {
+    const semaines = semainesDeLaQuinzaine(c.mois, c.quinzaine, annee);
+    const isCurrent = isQuinzaineCourante(c.mois, c.quinzaine, annee);
+    const label = c.mois.charAt(0) + c.mois.slice(1).toLowerCase() + ' ' + c.quinzaine;
+    html += `<th ${isCurrent ? 'class="total-col" style="background:rgba(77,139,58,.15);color:var(--olive-dark)"' : ''}>
+      ${label}<br><span style="font-size:.68rem;font-weight:400;opacity:.8">${semaines}</span>
+      ${isCurrent ? '<br><span style="font-size:.65rem;background:var(--olive);color:var(--sable);padding:1px 5px;border-radius:8px">● en cours</span>' : ''}
+    </th>`;
+  });
+  html += '<th class="total-col">Total</th></tr></thead><tbody>';
+
+  const colTotaux = {};
+  cols.forEach(c => colTotaux[`${c.mois}|${c.quinzaine}`] = 0);
+
+  Object.entries(dataIdx).forEach(([prodNom, vals]) => {
+    let rowTotal = 0;
+    html += `<tr><td class="produit-cell"><span style="display:flex;align-items:center;gap:8px">${getVeggieIcon(prodNom)}<span><strong>${prodNom}</strong><span class="emballage">${produitsSet[prodNom]}</span></span></span></td>`;
+    cols.forEach(c => {
+      const key = `${c.mois}|${c.quinzaine}`;
+      const val = vals[key] || 0;
+      rowTotal += val;
+      colTotaux[key] += val;
+      const isCurrent = isQuinzaineCourante(c.mois, c.quinzaine, annee);
+      html += `<td ${isCurrent ? 'style="background:rgba(77,139,58,.07);font-weight:600;color:var(--olive-dark)"' : ''}>${val ? val.toLocaleString('fr-FR') : '<span style="color:var(--encre-soft);font-size:.8rem">—</span>'}</td>`;
+    });
+    html += `<td class="total-cell">${rowTotal.toLocaleString('fr-FR')}</td></tr>`;
+  });
+
+  let grandTotal = 0;
+  html += '<tr style="background:var(--olive);color:var(--sable);font-weight:700"><td style="padding:10px">Total</td>';
+  cols.forEach(c => {
+    const key = `${c.mois}|${c.quinzaine}`;
+    const v = colTotaux[key] || 0;
+    grandTotal += v;
+    const isCurrent = isQuinzaineCourante(c.mois, c.quinzaine, annee);
+    html += `<td style="${isCurrent ? 'background:var(--safran);color:var(--encre)' : ''}">${v ? v.toLocaleString('fr-FR') : '—'}</td>`;
+  });
+  html += `<td style="background:var(--safran);color:var(--encre)">${grandTotal.toLocaleString('fr-FR')}</td></tr>`;
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+async function ensureSemaine(semaineId) {
+  const {data} = await sb.from('semaines').select('id').eq('id', semaineId).maybeSingle();
+  if (!data) {
+    const [year, w] = semaineId.split('-W');
+    const simple = new Date(Date.UTC(+year, 0, 1 + (+w - 1) * 7));
+    const dow = simple.getUTCDay();
+    const start = new Date(simple);
+    if (dow <= 4) start.setUTCDate(simple.getUTCDate() - simple.getUTCDay() + 1);
+    else start.setUTCDate(simple.getUTCDate() + 8 - simple.getUTCDay());
+    await sb.rpc('init_semaine', {
+      p_semaine: semaineId,
+      p_date_debut: start.toISOString().slice(0, 10)
+    });
+  }
+}
+
+function ouvrirModalProduit() {
+  // Pré-remplir la saison active
+  const saison = cache.params.saison_active || 'Hiver';
+  document.getElementById('np-saison').value = saison;
+  document.getElementById('np-variete').value = '';
+  document.getElementById('np-famille').value = '';
+  document.getElementById('np-emballage').value = '';
+  document.getElementById('modal-nouveau-produit').classList.remove('hidden');
+  setTimeout(() => document.getElementById('np-variete').focus(), 100);
+}
+
+function fermerModalProduit() {
+  document.getElementById('modal-nouveau-produit').classList.add('hidden');
+}
+
+async function ajouterProduitExistant() {
+  const sel = document.getElementById('prod-add-select');
+  if (!sel || !sel.value) { toast('Choisissez un produit'); return; }
+  const code = sel.value;
+  const prod = cache.produits.find(p => p.code === code);
+  if (!prod) return;
+  const saison = cache.params.saison_active || 'Eté';
+  showSync('syncing', '☁️ Ajout…');
+  const { error } = await sb.from('adherent_produits').upsert(
+    { adherent_id: session.user.id, produit_code: code, saison },
+    { onConflict: 'adherent_id,produit_code,saison' }
+  );
+  if (error) { showSync('error', '❌ Erreur'); toast('Erreur'); console.error(error); return; }
+  cache.adherentProduits.push({ adherent_id: session.user.id, produit_code: code, saison });
+  showSync('ok', '☁️ Produit ajouté');
+  toast(`✓ "${prod.variete}" ajouté à votre liste`);
+  loadProducteur();
+}
+
+async function creerNouveauProduit() {
+  const variete = document.getElementById('np-variete').value.trim();
+  const famille = document.getElementById('np-famille').value.trim();
+  const emballage = document.getElementById('np-emballage').value.trim();
+  const saison = document.getElementById('np-saison').value.trim();
+
+  if (!variete || !famille || !emballage || !saison) {
+    toast('Remplissez tous les champs'); return;
+  }
+
+  const code = 'TMP-' + Date.now();
+  const ordre = 999;
+
+  showSync('syncing', '☁️ Création…');
+
+  // Créer dans produits
+  const { error: errProd } = await sb.from('produits').insert({
+    code, saison, famille, variete, emballage, ordre, unite: 'kg'
+  });
+  if (errProd) { showSync('error', '❌ Erreur'); toast('Erreur création produit'); console.error(errProd); return; }
+
+  // Associer à l'adhérent
+  await sb.from('adherent_produits').upsert({
+    adherent_id: session.user.id, produit_code: code, saison
+  }, {onConflict: 'adherent_id,produit_code,saison'});
+
+  // Mettre à jour le cache local
+  const nouveauProduit = { code, saison, famille, variete, emballage, ordre, unite: 'kg', kg_par_colis: null };
+  cache.produits.push(nouveauProduit);
+  cache.adherentProduits.push({ adherent_id: session.user.id, produit_code: code, saison });
+
+  fermerModalProduit();
+  showSync('ok', '☁️ Produit créé');
+  toast(`✓ "${variete}" ajouté — code temporaire ${code}`);
+  loadProducteur(); // Recharger le tableau avec le nouveau produit
+}
+
+async function saveCommentaire() {
+  const commentaire = document.getElementById('prod-commentaire').value;
+  await sb.from('statuts_semaine').upsert({
+    semaine_id: cache.semaineCourante,
+    adherent_id: session.user.id,
+    commentaire: commentaire
+  }, {onConflict: 'semaine_id,adherent_id'});
+}
+
+async function onCellChange(inp) {
+  const code = inp.dataset.code;
+  const field = inp.dataset.field;
+  const value = parseFloat(inp.value) || 0;
+
+  const row = inp.closest('tr');
+  let total = 0;
+  row.querySelectorAll('input[type=number]').forEach(i => total += parseFloat(i.value) || 0);
+  const totalCell = row.querySelector(`[data-total="${code}"]`);
+  if (totalCell) totalCell.textContent = total || '';
+
+  showSync('syncing', '☁️ Enregistrement…');
+
+  const upsertData = {
+    semaine_id: cache.semaineCourante,
+    adherent_id: session.user.id,
+    produit_code: code,
+    [field]: value
+  };
+
+  if (code === 'AUTRE') {
+    const nomInput = document.getElementById('autre-nom');
+    if (nomInput) upsertData.produit_nom = nomInput.value;
+  }
+
+  const {error} = await sb.from('previsions').upsert(upsertData, {onConflict: 'semaine_id,adherent_id,produit_code'});
+
+  if (error) {
+    showSync('error', '❌ Erreur');
+    console.error(error);
+    toast('Erreur de synchro');
+  } else {
+    showSync('ok', '☁️ Enregistré');
+    let totSem = 0;
+    document.querySelectorAll('[data-total]').forEach(c => totSem += parseFloat(c.textContent) || 0);
+    document.getElementById('prod-total').textContent = totSem + ' colis';
+    await sb.from('statuts_semaine').upsert({
+      semaine_id: cache.semaineCourante,
+      adherent_id: session.user.id,
+      statut: 'EN_COURS'
+    }, {onConflict: 'semaine_id,adherent_id'});
+  }
+}
+
+async function submitPrevision() {
+  showSync('syncing', '☁️ Soumission…');
+  const commentaire = document.getElementById('prod-commentaire').value;
+
+  // Calcul volume total
+  let totalColis = 0;
+  document.querySelectorAll('[data-total]').forEach(c => totalColis += parseFloat(c.textContent) || 0);
+
+  const {error} = await sb.from('statuts_semaine').upsert({
+    semaine_id: cache.semaineCourante,
+    adherent_id: session.user.id,
+    statut: 'SOUMISE',
+    date_soumission: new Date().toISOString(),
+    commentaire: commentaire
+  }, {onConflict: 'semaine_id,adherent_id'});
+
+  if (error) { showSync('error', '❌ Erreur'); return; }
+
+  // Appel webhook n8n
+  try {
+    await fetch(WEBHOOK_SOUMISSION, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        representant: session.user.representant,
+        exploitation: session.user.nom_exploitation || '',
+        semaine: cache.semaineCourante,
+        total: totalColis,
+        commentaire: commentaire
+      })
+    });
+  } catch(e) { console.warn('Webhook non joignable', e); }
+
+  showSync('ok', '✓ Soumise');
+  toast('✓ Prévision soumise au pôle Commerce');
+  loadProducteur();
+}
+
+/* VUE ADMIN : DASHBOARD */
+async function loadAdmin() {
+  showSync('syncing', '☁️ Chargement…');
+  // Peupler le select semaine si vide
+  const sel = document.getElementById('admin-semaine-select');
+  if (sel && sel.options.length <= 1) await populateAdminSemaineSelect();
+  const semaine = cache.semaineCourante;
+  document.getElementById('adm-week').textContent = semaine.split('-W')[1];
+
+  await ensureSemaine(semaine);
+
+  const [statutsR, prevsR] = await Promise.all([
+    sb.from('statuts_semaine').select('*, adherent:adherents(*)').eq('semaine_id', semaine),
+    sb.from('previsions').select('adherent_id, total').eq('semaine_id', semaine)
+  ]);
+
+  const totaux = {};
+  (prevsR.data || []).forEach(p => {
+    totaux[p.adherent_id] = (totaux[p.adherent_id] || 0) + (parseFloat(p.total) || 0);
+  });
+
+  // Indexer les statuts soumis par adherent_id
+  const statutsMap = {};
+  (statutsR.data || []).forEach(s => { statutsMap[s.adherent_id] = s; });
+
+  const nbSoumises = (statutsR.data || []).filter(s => s.statut === 'SOUMISE').length;
+  const nbPending = cache.adherents.length - nbSoumises;
+  let volumeTotal = 0;
+  Object.values(totaux).forEach(v => volumeTotal += v);
+
+  document.getElementById('adm-soumises').textContent = nbSoumises + ' / ' + cache.adherents.length;
+  document.getElementById('adm-pending').textContent = nbPending;
+  document.getElementById('adm-volume').textContent = volumeTotal.toLocaleString('fr-FR');
+
+  // Afficher TOUS les adhérents, triés alphabétiquement par représentant
+  const tousAdherents = [...cache.adherents].sort((a, b) =>
+    (a.representant || '').localeCompare(b.representant || '', 'fr')
+  );
+
+  // Mode sélection actif ?
+  const modeSelect = document.getElementById('btn-select-relance')?.classList.contains('active');
+
+  let html = `<table class="prev-table"><thead><tr>
+    <th style="width:36px;text-align:center">
+      <input type="checkbox" id="chk-all" onchange="toggleCheckAll(this)" style="cursor:pointer;accent-color:var(--olive)" title="Tout sélectionner les non-soumis">
+    </th>
+    <th class="produit-col">Adhérent</th>
+    <th>Statut</th><th>Total colis</th><th>Soumis le</th><th>Commentaire</th><th style="width:100px"></th>
+  </tr></thead><tbody>`;
+
+  tousAdherents.forEach(a => {
+    const s = statutsMap[a.id];
+    const statut = s ? s.statut : 'NON_SAISI';
+    const peutRelancer = statut !== 'SOUMISE';
+    const dateSoumission = s?.date_soumission ? new Date(s.date_soumission).toLocaleString('fr-FR') : '—';
+    const commentaire = s?.commentaire || '—';
+    const total = (totaux[a.id] || 0).toLocaleString('fr-FR');
+    const email = a.email || '';
+    html += `<tr data-adherent-id="${a.id}" data-email="${email}" data-nom="${a.representant}" data-peut-relancer="${peutRelancer}">
+      <td style="text-align:center;padding:6px">
+        ${peutRelancer
+          ? `<input type="checkbox" class="chk-adherent" onchange="updateSelectionCount()" data-id="${a.id}"
+              style="cursor:pointer;accent-color:var(--olive)" ${!email ? 'disabled title="Pas d'email enregistré"' : ''}>`
+          : '<span style="color:var(--sable-dark);font-size:.8rem">—</span>'}
+      </td>
+      <td class="produit-cell">
+        <strong>${a.code} · ${a.representant}</strong>
+        <span class="emballage">${a.nom_exploitation || ''}</span>
+        ${!email && peutRelancer ? '<span style="font-size:.7rem;color:var(--terracotta);display:block">⚠ pas d'email</span>' : ''}
+      </td>
+      <td><span class="statut-pill statut-${statut}">${statut.replace('_',' ')}</span></td>
+      <td>${total}</td>
+      <td>${dateSoumission}</td>
+      <td style="text-align:left;font-size:.8rem;color:var(--encre-soft);max-width:180px">${commentaire}</td>
+      <td style="text-align:center">
+        ${peutRelancer && email
+          ? `<button class="btn btn-ghost btn-sm" style="font-size:.75rem;padding:4px 8px;white-space:nowrap"
+              onclick="relancerAdherent('${a.id}','${email}','${a.representant}')">📩 Relancer</button>`
+          : ''}
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('adm-list').innerHTML = html;
+  showSync('ok', '☁️ Synchronisé');
+}
+
+/* RELANCES */
+function toggleSelectRelance() {
+  const btn = document.getElementById('btn-select-relance');
+  btn.classList.toggle('active');
+  btn.style.background = btn.classList.contains('active') ? 'var(--sable-dark)' : '';
+  updateSelectionCount();
+}
+
+function toggleCheckAll(master) {
+  document.querySelectorAll('.chk-adherent:not(:disabled)').forEach(chk => {
+    chk.checked = master.checked;
+  });
+  updateSelectionCount();
+}
+
+function updateSelectionCount() {
+  const checked = document.querySelectorAll('.chk-adherent:checked');
+  const nb = checked.length;
+  const btnRelance = document.getElementById('btn-relance-selection');
+  const nbSpan = document.getElementById('nb-selection');
+  if (nbSpan) nbSpan.textContent = nb;
+  if (btnRelance) btnRelance.style.display = nb > 0 ? '' : 'none';
+}
+
+async function relancerAdherent(adherentId, email, nom) {
+  if (!email) { toast('⚠ Pas d'email pour ce producteur'); return; }
+  const semaine = cache.semaineCourante;
+  const wNum = semaine.split('-W')[1];
+  if (!confirm(`Envoyer une relance à ${nom} (${email}) pour la semaine S${wNum} ?`)) return;
+  await _envoyerRelance([{ adherentId, email, nom }], semaine);
+}
+
+async function relancerSelection() {
+  const semaine = cache.semaineCourante;
+  const wNum = semaine.split('-W')[1];
+  const checked = document.querySelectorAll('.chk-adherent:checked');
+  if (!checked.length) { toast('Aucun producteur sélectionné'); return; }
+  const destinataires = [];
+  checked.forEach(chk => {
+    const row = chk.closest('tr');
+    destinataires.push({
+      adherentId: row.dataset.adherentId,
+      email: row.dataset.email,
+      nom: row.dataset.nom
+    });
+  });
+  const noms = destinataires.map(d => d.nom).join(', ');
+  if (!confirm(`Envoyer une relance à ${destinataires.length} producteur(s) :\n${noms}\n\nSemaine S${wNum} ?`)) return;
+  await _envoyerRelance(destinataires, semaine);
+}
+
+async function _envoyerRelance(destinataires, semaine) {
+  const wNum = semaine.split('-W')[1];
+  let ok = 0, err = 0;
+  showSync('syncing', '📩 Envoi en cours…');
+  for (const d of destinataires) {
+    try {
+      const res = await fetch(WEBHOOK_RELANCE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adherent_id: d.adherentId, email: d.email, nom: d.nom, semaine, semaine_num: wNum })
+      });
+      if (res.ok) ok++; else err++;
+    } catch(e) { err++; }
+  }
+  showSync('ok', '☁️ Synchronisé');
+  if (err === 0) toast(`✅ ${ok} relance(s) envoyée(s)`);
+  else toast(`⚠ ${ok} envoyée(s), ${err} erreur(s)`);
+  // Décocher tout
+  document.querySelectorAll('.chk-adherent').forEach(c => c.checked = false);
+  updateSelectionCount();
+}
+
+/* VUE ADMIN : CONSOLIDATION */
+async function loadConsolidation() {
+  showSync('syncing', '☁️ Chargement…');
+  const semaine = cache.semaineCourante;
+
+  const {data, error} = await sb.from('v_consolidation').select('*').eq('semaine_id', semaine);
+  if (error) { showSync('error', '❌ Erreur'); console.error(error); return; }
+
+  let html = '<table class="prev-table"><thead><tr>'
+    + '<th class="produit-col">Produit (saison · famille)</th>'
+    + buildHeaders(semaine).map(h => `<th>${h}</th>`).join('')
+    + '<th class="total-col">TOTAL</th><th>Apporteurs</th></tr></thead><tbody>';
+
+  let grandTotal = 0;
+  (data || []).filter(r => parseFloat(r.total_semaine) > 0).forEach(r => {
+    grandTotal += parseFloat(r.total_semaine);
+    html += `<tr>
+      <td class="produit-cell"><strong>${r.variete}</strong><span class="emballage">${r.saison} · ${r.famille} · ${r.emballage}</span></td>
+      <td>${r.vendredi || ''}</td><td>${r.samedi || ''}</td><td>${r.lundi || ''}</td>
+      <td>${r.mardi || ''}</td><td>${r.mercredi || ''}</td><td>${r.jeudi || ''}</td>
+      <td>${r.vendredi_p1 || ''}</td><td>${r.samedi2 || ''}</td>
+      <td class="total-cell">${r.total_semaine}</td>
+      <td><strong>${r.nb_apporteurs}</strong></td>
+    </tr>`;
+  });
+  html += `<tr style="background:var(--olive);color:var(--blanc);font-weight:700">
+    <td style="padding:10px">TOTAL TOUS PRODUITS</td>
+    <td colspan="7"></td>
+    <td style="background:var(--safran);color:var(--encre)">${grandTotal.toLocaleString('fr-FR')}</td>
+    <td></td>
+  </tr>`;
+  html += '</tbody></table>';
+  document.getElementById('consolide-table').innerHTML = html;
+  showSync('ok', '☁️ Synchronisé');
+}
+
+/* VUE ADMIN : DETAIL PRODUITS × PRODUCTEURS */
+async function loadDetail() {
+  showSync('syncing', '☁️ Chargement…');
+  const semaine = cache.semaineCourante;
+
+  const {data: prevs, error} = await sb
+    .from('previsions')
+    .select('*, adherent:adherents(code, representant)')
+    .eq('semaine_id', semaine);
+
+  if (error) { showSync('error', '❌ Erreur'); console.error(error); return; }
+
+  if (!prevs || prevs.length === 0) {
+    document.getElementById('detail-table').innerHTML = '<p class="empty-state">Aucune prévision saisie cette semaine.</p>';
+    showSync('ok', '☁️ Synchronisé');
+    return;
+  }
+
+  // Organiser par produit_code → adherent_id → données
+  const fields = ['vendredi1', 'samedi', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi2', 'samedi2'];
+  const headers = buildHeaders(cache.semaineCourante);
+
+  // Liste des producteurs présents
+  const producteursMap = {};
+  prevs.forEach(p => {
+    if (p.adherent && !producteursMap[p.adherent_id]) {
+      producteursMap[p.adherent_id] = p.adherent;
+    }
+  });
+  const producteurs = Object.values(producteursMap).sort((a,b) => a.code.localeCompare(b.code));
+
+  // Organiser par produit
+  const parProduit = {};
+  prevs.forEach(p => {
+    const total = fields.reduce((s, f) => s + (parseFloat(p[f]) || 0), 0);
+    if (total === 0) return;
+    if (!parProduit[p.produit_code]) parProduit[p.produit_code] = {};
+    parProduit[p.produit_code][p.adherent_id] = p;
+  });
+
+  // Récupérer infos produits
+  const produitsMap = {};
+  cache.produits.forEach(p => produitsMap[p.code] = p);
+
+  let html = '<table class="prev-table"><thead><tr>'
+    + '<th class="produit-col">Produit</th>'
+    + '<th class="produit-col">Producteur</th>'
+    + headers.map(h => `<th>${h}</th>`).join('')
+    + '<th class="total-col">TOTAL</th></tr></thead><tbody>';
+
+  let grandTotal = 0;
+
+  Object.keys(parProduit).sort().forEach(code => {
+    const prod = produitsMap[code];
+    const isTmp = code.startsWith('TMP-');
+    const nomProd = prod ? `${prod.variete} ${prod.emballage}${isTmp ? ' <span class="tmp-badge">[TMP]</span>' : ''}` : code;
+    const adherentsData = parProduit[code];
+    const adherentIds = Object.keys(adherentsData);
+
+    adherentIds.forEach((adhId, idx) => {
+      const p = adherentsData[adhId];
+      const adh = producteursMap[adhId];
+      const total = fields.reduce((s, f) => s + (parseFloat(p[f]) || 0), 0);
+      grandTotal += total;
+
+      html += `<tr>
+        ${idx === 0 ? `<td class="produit-cell" rowspan="${adherentIds.length}"><strong>${nomProd}</strong></td>` : ''}
+        <td style="text-align:left;padding:6px 10px;font-size:.82rem">${adh ? `${adh.code} · ${adh.representant}` : adhId}</td>
+        ${fields.map(f => `<td>${parseFloat(p[f]) || ''}</td>`).join('')}
+        <td class="total-cell">${total}</td>
+      </tr>`;
+    });
+
+    // Sous-total produit
+    const sousTotalFields = fields.map(f =>
+      adherentIds.reduce((s, id) => s + (parseFloat(parProduit[code][id][f]) || 0), 0)
+    );
+    const sousTotal = sousTotalFields.reduce((a, b) => a + b, 0);
+    html += `<tr style="background:var(--sable-dark);font-weight:700;font-size:.8rem">
+      <td colspan="2" style="text-align:right;padding:4px 10px;color:var(--encre-soft)">Sous-total ${nomProd}</td>
+      ${sousTotalFields.map(v => `<td>${v || ''}</td>`).join('')}
+      <td class="total-cell">${sousTotal}</td>
+    </tr>`;
+  });
+
+  html += `<tr style="background:var(--olive);color:var(--blanc);font-weight:700">
+    <td colspan="2" style="padding:10px">TOTAL GÉNÉRAL</td>
+    <td colspan="${fields.length}"></td>
+    <td style="background:var(--safran);color:var(--encre)">${grandTotal.toLocaleString('fr-FR')}</td>
+  </tr>`;
+  html += '</tbody></table>';
+
+  document.getElementById('detail-table').innerHTML = html;
+  showSync('ok', '☁️ Synchronisé');
+}
+
+/* VUE ADMIN : ADHERENTS */
+function renderAdherents() {
+  let html = '<table class="prev-table"><thead><tr>'
+    + '<th class="produit-col">Adhérent</th><th>Email</th><th>Tél</th></tr></thead><tbody>';
+  cache.adherents.forEach(a => {
+    html += `<tr>
+      <td class="produit-cell"><strong>${a.code} · ${a.representant}</strong><span class="emballage">${a.nom_exploitation || ''}</span></td>
+      <td>${a.email || '—'}</td>
+      <td>${a.tel || '—'}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('adh-list').innerHTML = html;
+}
+
+/* VUE ADMIN : QUINZAINE */
+
+// Correspondance mois texte → numéro (AVRIL, MAI, etc.)
+const MOIS_NUM = {
+  JANVIER:1,FEVRIER:2,MARS:3,AVRIL:4,MAI:5,JUIN:6,
+  JUILLET:7,AOUT:8,SEPTEMBRE:9,OCTOBRE:10,NOVEMBRE:11,DECEMBRE:12
+};
+
+// Calcule les 2 numéros de semaines ISO d'une quinzaine
+function semainesDeLaQuinzaine(mois, quinzaine, annee) {
+  const moisNum = MOIS_NUM[mois.toUpperCase()] || 1;
+  // Q1 = 1 au 15, Q2 = 16 à fin de mois
+  const jour1 = quinzaine === 'Q1' ? 1 : 16;
+  const jourFin = quinzaine === 'Q1' ? 15 : new Date(annee, moisNum, 0).getDate();
+  // Parcourir tous les jours et collecter les semaines ISO uniques
+  const semsSet = new Set();
+  for (let j = jour1; j <= jourFin; j++) {
+    semsSet.add(getISOWeekNum(new Date(annee, moisNum - 1, j)));
+  }
+  const sems = Array.from(semsSet).sort((a, b) => a - b);
+  if (sems.length === 1) return `S${sems[0]}`;
+  if (sems.length === 2) return `S${sems[0]}–S${sems[1]}`;
+  return `S${sems[0]}–S${sems[sems.length - 1]}`;
+}
+
+function getISOWeekNum(d) {
+  d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+}
+
+// Vérifie si une quinzaine est la courante par rapport à semaineCourante
+function isQuinzaineCourante(mois, quinzaine, annee) {
+  const moisNum = MOIS_NUM[mois.toUpperCase()] || 1;
+  const jour1 = quinzaine === 'Q1' ? 1 : 16;
+  const jour2 = quinzaine === 'Q1' ? 15 : 28;
+  const s1 = getISOWeekNum(new Date(annee, moisNum - 1, jour1));
+  const s2 = getISOWeekNum(new Date(annee, moisNum - 1, jour2));
+  const [, wStr] = (cache.semaineCourante || '').split('-W');
+  const w = parseInt(wStr || '0');
+  return w >= s1 && w <= s2;
+}
+
+async function loadQuinzaine() {
+  showSync('syncing', '☁️ Chargement…');
+
+  // Construire le filtre adhérent
+  const sel = document.getElementById('qz-filter-adherent');
+  const adherentFilter = sel ? sel.value : '';
+
+  // Alimenter le select adhérents si vide
+  if (sel && sel.options.length <= 1) {
+    cache.adherents.forEach(a => {
+      const o = document.createElement('option');
+      o.value = a.id;
+      o.textContent = a.nom_exploitation || a.representant;
+      sel.appendChild(o);
+    });
+  }
+
+  let query = sb.from('previsions_quinzaine').select('*').order('mois').order('quinzaine');
+  if (adherentFilter) query = query.eq('adherent_id', adherentFilter);
+
+  const { data, error } = await query;
+  if (error) { showSync('error', '❌ Erreur'); console.error(error); return; }
+
+  const rows = data || [];
+  if (rows.length === 0) {
+    document.getElementById('qz-table').innerHTML = '<p class="empty-state">Aucune prévision quinzaine saisie.</p>';
+    showSync('ok', '☁️ Synchronisé');
+    return;
+  }
+
+  // Déterminer l'année courante
+  const annee = new Date().getFullYear();
+
+  // Construire la liste ordonnée des colonnes (mois + quinzaine uniques)
+  const colsMap = {};
+  const MOIS_ORDER = ['JANVIER','FEVRIER','MARS','AVRIL','MAI','JUIN','JUILLET','AOUT','SEPTEMBRE','OCTOBRE','NOVEMBRE','DECEMBRE'];
+  rows.forEach(r => {
+    const key = `${r.mois}|${r.quinzaine}`;
+    if (!colsMap[key]) colsMap[key] = { mois: r.mois, quinzaine: r.quinzaine };
+  });
+  const cols = Object.values(colsMap).sort((a, b) => {
+    const mo = (MOIS_ORDER.indexOf(a.mois.toUpperCase()) - MOIS_ORDER.indexOf(b.mois.toUpperCase())) * 10;
+    const qo = a.quinzaine.localeCompare(b.quinzaine);
+    return mo + qo;
+  });
+
+  // Construire la liste des produits uniques
+  const produitsSet = {};
+  rows.forEach(r => { if (!produitsSet[r.produit_nom]) produitsSet[r.produit_nom] = r.unite || 'kg'; });
+
+  // Indexer les données : produit_nom → mois|quinzaine → quantite
+  const dataIdx = {};
+  rows.forEach(r => {
+    if (!dataIdx[r.produit_nom]) dataIdx[r.produit_nom] = {};
+    dataIdx[r.produit_nom][`${r.mois}|${r.quinzaine}`] = parseFloat(r.quantite) || 0;
+  });
+
+  // KPIs
+  let volumeTotal = 0;
+  let currentLabel = '—';
+  rows.forEach(r => volumeTotal += parseFloat(r.quantite) || 0);
+  cols.forEach(c => { if (isQuinzaineCourante(c.mois, c.quinzaine, annee)) currentLabel = `${c.mois.charAt(0)+c.mois.slice(1).toLowerCase()} ${c.quinzaine}`; });
+  document.getElementById('qz-volume').textContent = volumeTotal.toLocaleString('fr-FR') + ' kg';
+  document.getElementById('qz-current').textContent = currentLabel;
+  document.getElementById('qz-produits').textContent = Object.keys(produitsSet).length;
+
+  // Construction du tableau
+  let html = '<table class="prev-table"><thead><tr><th class="produit-col">Produit</th>';
+  cols.forEach(c => {
+    const semaines = semainesDeLaQuinzaine(c.mois, c.quinzaine, annee);
+    const isCurrent = isQuinzaineCourante(c.mois, c.quinzaine, annee);
+    const label = `${c.mois.charAt(0)+c.mois.slice(1).toLowerCase()} ${c.quinzaine}`;
+    html += `<th ${isCurrent ? 'class="total-col" style="background:rgba(77,139,58,.15);color:var(--olive-dark)"' : ''}>${label}<br><span style="font-size:.68rem;font-weight:400;opacity:.8">${semaines}</span>${isCurrent ? ' <span style="font-size:.65rem;background:var(--olive);color:var(--sable);padding:1px 5px;border-radius:8px">●</span>' : ''}</th>`;
+  });
+  html += '<th class="total-col">Total</th></tr></thead><tbody>';
+
+  // Totaux par colonne
+  const colTotaux = {};
+  cols.forEach(c => colTotaux[`${c.mois}|${c.quinzaine}`] = 0);
+
+  Object.entries(dataIdx).forEach(([prodNom, vals]) => {
+    const unite = produitsSet[prodNom] || 'kg';
+    let rowTotal = 0;
+    html += `<tr><td class="produit-cell"><strong>${prodNom}</strong><span class="emballage">${unite}</span></td>`;
+    cols.forEach(c => {
+      const key = `${c.mois}|${c.quinzaine}`;
+      const val = vals[key] || 0;
+      rowTotal += val;
+      colTotaux[key] += val;
+      const isCurrent = isQuinzaineCourante(c.mois, c.quinzaine, annee);
+      html += `<td ${isCurrent ? 'style="background:rgba(77,139,58,.07);font-weight:600;color:var(--olive-dark)"' : ''}>${val ? val.toLocaleString('fr-FR') : '<span style="color:var(--encre-soft);font-size:.8rem">—</span>'}</td>`;
+    });
+    html += `<td class="total-cell">${rowTotal.toLocaleString('fr-FR')}</td></tr>`;
+  });
+
+  // Ligne total général
+  let grandTotal = 0;
+  html += '<tr style="background:var(--olive);color:var(--sable);font-weight:700"><td style="padding:10px">Total général</td>';
+  cols.forEach(c => {
+    const key = `${c.mois}|${c.quinzaine}`;
+    const v = colTotaux[key] || 0;
+    grandTotal += v;
+    const isCurrent = isQuinzaineCourante(c.mois, c.quinzaine, annee);
+    html += `<td style="${isCurrent ? 'background:var(--safran);color:var(--encre)' : ''}">${v ? v.toLocaleString('fr-FR') : '—'}</td>`;
+  });
+  html += `<td style="background:var(--safran);color:var(--encre)">${grandTotal.toLocaleString('fr-FR')}</td></tr>`;
+
+  html += '</tbody></table>';
+  document.getElementById('qz-table').innerHTML = html;
+  showSync('ok', '☁️ Synchronisé');
+}
+
+/* PRINT DETAIL */
+function printDetail() {
+  const table = document.getElementById('detail-table').innerHTML;
+  const semaine = cache.semaineCourante;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Détail prévisions ${semaine}</title>
+  <style>
+    @page { size: A4 landscape; margin: 10mm 8mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 10px; color: #1F2937; background: #fff; }
+
+    /* EN-TÊTE */
+    .pdf-header { display: flex; align-items: center; justify-content: space-between;
+      background: #5C7541; color: #FAF1DC; padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; }
+    .pdf-header-left { display: flex; align-items: center; gap: 12px; }
+    .pdf-logo { width: 40px; height: 40px; border-radius: 50%; background: #FAF1DC; color: #5C7541;
+      display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+      border: 2px solid #E8A33D; flex-shrink: 0; }
+    .pdf-title { font-family: Georgia, serif; font-size: 15px; font-weight: 700; }
+    .pdf-subtitle { font-size: 9px; opacity: .85; margin-top: 2px; }
+    .pdf-badge { background: rgba(232,163,61,.3); color: #FAF1DC; padding: 4px 12px;
+      border-radius: 14px; font-size: 9px; font-weight: 700; text-align: center; }
+    .pdf-badge strong { display: block; font-size: 13px; font-family: Georgia, serif; }
+
+    /* TABLEAU */
+    table { width: 100%; border-collapse: collapse; font-size: 9px; }
+    thead tr th { background: #44582F; color: #FAF1DC; padding: 6px 8px; text-align: center;
+      font-size: 8px; text-transform: uppercase; letter-spacing: .5px; }
+    thead tr th.produit-col { text-align: left; padding-left: 10px; background: #5C7541; min-width: 140px; }
+    thead tr th.total-col { background: #E8A33D; color: #1F2937; font-weight: 700; }
+
+    /* Lignes produit */
+    tbody tr td { padding: 5px 7px; border-bottom: 1px solid #E5D2A7; text-align: center; vertical-align: middle; }
+    tbody tr td.produit-cell { text-align: left; padding: 6px 10px; background: #F4F9F0; font-weight: 700; font-size: 9.5px; }
+    tbody tr td.total-cell { font-weight: 700; background: #EEF7E7; color: #3B6D11; font-size: 10px; }
+    tbody tr:nth-child(even) td:not(.produit-cell):not(.total-cell) { background: #FAFAF7; }
+
+    /* Lignes sous-total */
+    tbody tr[style*="sable-dark"] td,
+    tbody tr[style*="background:var(--sable-dark)"] td { background: #D9CCA8 !important; color: #4B5563; }
+
+    /* Ligne total général */
+    tbody tr[style*="olive"] td { background: #5C7541 !important; color: #FAF1DC !important; font-weight: 700; }
+    tbody tr[style*="olive"] td[style*="safran"] { background: #E8A33D !important; color: #1F2937 !important; }
+
+    .emballage { display: block; font-weight: 400; font-size: 8px; color: #6B7280; margin-top: 1px; }
+    .tmp-badge { display: inline-block; background: rgba(232,163,61,.3); color: #8a6010;
+      font-size: 7px; font-weight: 700; padding: 0 4px; border-radius: 4px; }
+
+    /* PIED DE PAGE */
+    .pdf-footer { margin-top: 10px; padding-top: 6px; border-top: 1px solid #E5D2A7;
+      display: flex; justify-content: space-between; font-size: 8px; color: #6B7280; }
+    .pdf-legend { display: flex; gap: 16px; align-items: center; }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+    /* Masquer les SVG (icônes légumes) */
+    svg { display: none !important; }
+
+    /* Ajustement colonnes jour */
+    th:not(.produit-col):not(.total-col) { min-width: 52px; }
+  </style>
+  </head><body>
+
+  <div class="pdf-header">
+    <div class="pdf-header-left">
+      <div class="pdf-logo">UV</div>
+      <div>
+        <div class="pdf-title">PILOT PRÉVISIONS — Détail produits × producteurs</div>
+        <div class="pdf-subtitle">SCA UNI-VERT · Bio Équitable en France · Document confidentiel</div>
+      </div>
+    </div>
+    <div class="pdf-badge">
+      <strong>S${semaine.split('-W')[1]}</strong>
+      ${semaine.split('-')[0]}
+    </div>
+  </div>
+
+  ${table}
+
+  <div class="pdf-footer">
+    <div class="pdf-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#44582F"></div> Ligne producteur</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#D9CCA8"></div> Sous-total produit</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E8A33D"></div> Total général</div>
+    </div>
+    <div>Imprimé le ${new Date().toLocaleString('fr-FR')} · PILOT v4.0</div>
+  </div>
+
+  </body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); win.close(); }, 600);
+}
+
+/* VUE ADMIN : RÉCAP PAR JOUR */
+function initRecapJour() {
+  const sel = document.getElementById('recap-jour-select');
+  if (!sel) return;
+  const semaine = cache.semaineCourante;
+  const headers = buildHeaders(semaine); // ['Ven 30/05', 'Sam 31/05', ...]
+  const fields  = ['vendredi1','samedi','lundi','mardi','mercredi','jeudi','vendredi2','samedi2'];
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Choisir un jour —</option>';
+  fields.forEach((f, i) => {
+    const o = document.createElement('option');
+    o.value = f;
+    o.textContent = headers[i];
+    if (f === current) o.selected = true;
+    sel.appendChild(o);
+  });
+  if (current) loadRecapJour();
+}
+
+async function loadRecapJour() {
+  const sel     = document.getElementById('recap-jour-select');
+  const field   = sel ? sel.value : '';
+  const content = document.getElementById('recap-jour-content');
+  const printBtn = document.getElementById('recap-jour-print-btn');
+  if (!field) {
+    content.innerHTML = '<p class="empty-state">Sélectionnez un jour pour voir les volumes.</p>';
+    if (printBtn) printBtn.style.display = 'none';
+    return;
+  }
+
+  const semaine  = cache.semaineCourante;
+  const headers  = buildHeaders(semaine);
+  const fields   = ['vendredi1','samedi','lundi','mardi','mercredi','jeudi','vendredi2','samedi2'];
+  const jourLabel = headers[fields.indexOf(field)] || field;
+
+  content.innerHTML = '<p class="empty-state" style="padding:20px">⏳ Chargement…</p>';
+  showSync('syncing', '☁️ Chargement…');
+
+  // Récupérer TOUTES les prévisions de la semaine pour le jour sélectionné
+  const { data: prevs, error } = await sb
+    .from('previsions')
+    .select('*, adherent:adherents(code, representant, nom_exploitation), produit:produits(variete, emballage, famille)')
+    .eq('semaine_id', semaine)
+    .gt(field, 0);
+
+  if (error) { showSync('error', '❌ Erreur'); return; }
+
+  if (!prevs || prevs.length === 0) {
+    content.innerHTML = `<div class="empty-state" style="padding:40px">
+      <div style="font-size:2rem;margin-bottom:8px">🌿</div>
+      <div>Aucune saisie pour ${jourLabel}</div>
+    </div>`;
+    if (printBtn) printBtn.style.display = 'none';
+    showSync('ok', '☁️ Synchronisé');
+    return;
+  }
+
+  // ── Producteurs uniques triés alpha (colonne) ──
+  const producteursMap = {};
+  prevs.forEach(p => {
+    if (!producteursMap[p.adherent_id]) {
+      const a = p.adherent || {};
+      producteursMap[p.adherent_id] = {
+        id: p.adherent_id,
+        code: a.code || '',
+        nom: a.nom_exploitation || a.representant || p.adherent_id
+      };
+    }
+  });
+  const producteurs = Object.values(producteursMap)
+    .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+
+  // ── Produits uniques triés alpha (ligne) ──
+  const produitsMap = {};
+  prevs.forEach(p => {
+    if (!produitsMap[p.produit_code]) {
+      const pr = p.produit || {};
+      produitsMap[p.produit_code] = {
+        code: p.produit_code,
+        variete: pr.variete || p.produit_code,
+        emballage: pr.emballage || ''
+      };
+    }
+  });
+  const produits = Object.values(produitsMap)
+    .sort((a, b) => a.variete.localeCompare(b.variete, 'fr'));
+
+  // ── Index croisé produit_code × adherent_id → valeur ──
+  const idx = {};
+  prevs.forEach(p => {
+    if (!idx[p.produit_code]) idx[p.produit_code] = {};
+    idx[p.produit_code][p.adherent_id] = parseFloat(p[field]) || 0;
+  });
+
+  // ── KPIs ──
+  let totalJour = 0;
+  prevs.forEach(p => totalJour += parseFloat(p[field]) || 0);
+
+  let html = `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+    <div style="background:var(--sable-light);border-radius:10px;padding:12px 18px;border-left:4px solid var(--olive);flex:1;min-width:140px">
+      <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.7px;color:var(--encre-soft);font-weight:600">Jour sélectionné</div>
+      <div style="font-size:1.15rem;font-family:Georgia,serif;font-weight:700;color:var(--olive-dark);margin-top:4px">${jourLabel}</div>
+      <div style="font-size:.75rem;color:var(--encre-soft);margin-top:2px">S${semaine.split('-W')[1]}</div>
+    </div>
+    <div style="background:var(--blanc);border-radius:10px;padding:12px 18px;box-shadow:var(--shadow);border-top:3px solid var(--olive);text-align:center;min-width:110px">
+      <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.7px;color:var(--encre-soft);font-weight:600">Volume total</div>
+      <div style="font-size:1.4rem;font-family:Georgia,serif;font-weight:700;color:var(--olive-dark);margin-top:4px">${totalJour.toLocaleString('fr-FR')}</div>
+      <div style="font-size:.72rem;color:var(--encre-soft)">colis</div>
+    </div>
+    <div style="background:var(--blanc);border-radius:10px;padding:12px 18px;box-shadow:var(--shadow);border-top:3px solid var(--safran);text-align:center;min-width:110px">
+      <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.7px;color:var(--encre-soft);font-weight:600">Produits</div>
+      <div style="font-size:1.4rem;font-family:Georgia,serif;font-weight:700;color:var(--encre);margin-top:4px">${produits.length}</div>
+      <div style="font-size:.72rem;color:var(--encre-soft)">références</div>
+    </div>
+    <div style="background:var(--blanc);border-radius:10px;padding:12px 18px;box-shadow:var(--shadow);border-top:3px solid var(--terracotta);text-align:center;min-width:110px">
+      <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.7px;color:var(--encre-soft);font-weight:600">Apporteurs</div>
+      <div style="font-size:1.4rem;font-family:Georgia,serif;font-weight:700;color:var(--encre);margin-top:4px">${producteurs.length}</div>
+      <div style="font-size:.72rem;color:var(--encre-soft)">producteurs</div>
+    </div>
+  </div>`;
+
+  // ── Tableau croisé : lignes = produits, colonnes = producteurs ──
+  html += `<div class="table-wrapper"><table class="prev-table" id="recap-jour-table">
+    <thead>
+      <tr>
+        <th class="produit-col">Produit</th>
+        ${producteurs.map(p => `<th style="font-size:.7rem;padding:5px 4px;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis" title="${p.nom}">${p.nom.split(' ')[0]}<br><span style="font-weight:400;opacity:.75;font-size:.65rem">${p.code}</span></th>`).join('')}
+        <th class="total-col">TOTAL</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  // Totaux par colonne (producteur)
+  const totauxParProd = {};
+  producteurs.forEach(p => totauxParProd[p.id] = 0);
+
+  produits.forEach((prod, iProd) => {
+    const rowVals = producteurs.map(p => idx[prod.code]?.[p.id] || 0);
+    const rowTotal = rowVals.reduce((s, v) => s + v, 0);
+    rowVals.forEach((v, i) => totauxParProd[producteurs[i].id] += v);
+    const bg = iProd % 2 === 0 ? '' : 'style="background:var(--sable-light)"';
+
+    html += `<tr ${bg}>
+      <td class="produit-cell">
+        <span style="display:flex;align-items:center;gap:7px">
+          ${getVeggieIcon(prod.variete)}
+          <span><strong>${prod.variete}</strong><span class="emballage">${prod.emballage}</span></span>
+        </span>
+      </td>
+      ${rowVals.map(v => v > 0
+        ? `<td style="text-align:center;font-weight:600;color:var(--encre);font-size:.9rem">${v.toLocaleString('fr-FR')}</td>`
+        : `<td style="text-align:center;color:var(--sable-dark);font-size:.8rem">—</td>`
+      ).join('')}
+      <td class="total-cell">${rowTotal.toLocaleString('fr-FR')}</td>
+    </tr>`;
+  });
+
+  // Ligne total par producteur
+  const grandTotal = Object.values(totauxParProd).reduce((s, v) => s + v, 0);
+  html += `<tr style="background:var(--olive);color:var(--sable);font-weight:700">
+    <td style="padding:8px 10px">TOTAL</td>
+    ${producteurs.map(p => {
+      const v = totauxParProd[p.id] || 0;
+      return v > 0
+        ? `<td style="text-align:center;padding:8px 4px;font-size:.9rem">${v.toLocaleString('fr-FR')}</td>`
+        : `<td style="text-align:center;padding:8px 4px;opacity:.4">—</td>`;
+    }).join('')}
+    <td style="background:var(--safran);color:var(--encre);text-align:center;font-size:1rem;font-family:Georgia,serif;font-weight:700;padding:8px">${grandTotal.toLocaleString('fr-FR')}</td>
+  </tr>`;
+
+  html += '</tbody></table></div>';
+  content.innerHTML = html;
+  if (printBtn) printBtn.style.display = '';
+  showSync('ok', '☁️ Synchronisé');
+}
+
+function printRecapJour() {
+  const tableEl = document.getElementById('recap-jour-table');
+  if (!tableEl) return;
+  const sel = document.getElementById('recap-jour-select');
+  const fields  = ['vendredi1','samedi','lundi','mardi','mercredi','jeudi','vendredi2','samedi2'];
+  const headers = buildHeaders(cache.semaineCourante);
+  const field   = sel ? sel.value : '';
+  const jourLabel = headers[fields.indexOf(field)] || field;
+  const semaine = cache.semaineCourante;
+  const table = tableEl.outerHTML;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Récap jour ${jourLabel} - S${semaine.split('-W')[1]}</title>
+  <style>
+    @page { size: A4 landscape; margin: 8mm 7mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 9px; color: #1F2937; }
+    .pdf-header { background: #5C7541; color: #FAF1DC; padding: 10px 16px; border-radius: 7px;
+      margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .pdf-logo { width: 36px; height: 36px; border-radius: 50%; background: #FAF1DC; color: #5C7541;
+      display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;
+      border: 2px solid #E8A33D; flex-shrink: 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #44582F; color: #FAF1DC; padding: 5px 5px; font-size: 8px; text-align: center; }
+    th.produit-col { text-align: left; padding-left: 8px; background: #5C7541; min-width: 110px; }
+    th.total-col { background: #E8A33D; color: #1F2937; }
+    td { padding: 4px 5px; border-bottom: 1px solid #E5D2A7; text-align: center; font-size: 9px; }
+    td.produit-cell { text-align: left; padding: 5px 8px; background: #F4F9F0; font-weight: 700; font-size: 9px; }
+    td.total-cell { font-weight: 700; background: #EEF7E7; color: #3B6D11; }
+    tr:nth-child(even) td:not(.produit-cell):not(.total-cell) { background: #FAFAF7; }
+    .emballage { display: block; font-weight: 400; font-size: 8px; color: #6B7280; }
+    svg { display: none !important; }
+    .pdf-footer { margin-top: 8px; display: flex; justify-content: space-between;
+      font-size: 8px; color: #9CA3AF; padding-top: 5px; border-top: 1px solid #E5D2A7; }
+  </style></head><body>
+  <div class="pdf-header">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="pdf-logo">UV</div>
+      <div>
+        <div style="font-family:Georgia,serif;font-size:14px;font-weight:700">PILOT PRÉVISIONS — Récap par jour</div>
+        <div style="font-size:9px;opacity:.85;margin-top:2px">SCA UNI-VERT · Produits × Producteurs</div>
+      </div>
+    </div>
+    <div style="text-align:center">
+      <div style="background:rgba(232,163,61,.35);padding:5px 14px;border-radius:12px">
+        <div style="font-family:Georgia,serif;font-size:16px;font-weight:700">${jourLabel}</div>
+        <div style="font-size:9px;opacity:.85">S${semaine.split('-W')[1]} · ${semaine.split('-')[0]}</div>
+      </div>
+    </div>
+  </div>
+  ${table}
+  <div class="pdf-footer">
+    <div>Produits en lignes · Producteurs en colonnes · Ordre alphabétique</div>
+    <div>Imprimé le ${new Date().toLocaleString('fr-FR')} · PILOT v4.0</div>
+  </div>
+  </body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); win.close(); }, 600);
+}
+
+/* PRINT CONSOLIDATION */
+function printConsolidation() {
+  const table = document.getElementById('consolide-table').innerHTML;
+  const semaine = cache.semaineCourante;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Consolidation ${semaine}</title>
+  <style>
+    @page { size: A4 landscape; margin: 10mm 8mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 10px; color: #1F2937; background: #fff; }
+    .pdf-header { display: flex; align-items: center; justify-content: space-between;
+      background: #5C7541; color: #FAF1DC; padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; }
+    .pdf-logo { width: 40px; height: 40px; border-radius: 50%; background: #FAF1DC; color: #5C7541;
+      display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+      border: 2px solid #E8A33D; }
+    .pdf-title { font-family: Georgia, serif; font-size: 15px; font-weight: 700; margin-left: 12px; }
+    .pdf-subtitle { font-size: 9px; opacity: .85; margin-top: 2px; }
+    .pdf-badge { background: rgba(232,163,61,.3); color: #FAF1DC; padding: 4px 12px;
+      border-radius: 14px; font-size: 9px; font-weight: 700; text-align: center; }
+    .pdf-badge strong { display: block; font-size: 13px; font-family: Georgia, serif; }
+    table { width: 100%; border-collapse: collapse; font-size: 9px; }
+    th { background: #44582F; color: #FAF1DC; padding: 6px 8px; text-align: center; font-size: 8px; text-transform: uppercase; }
+    th.produit-col { text-align: left; padding-left: 10px; background: #5C7541; }
+    th.total-col { background: #E8A33D; color: #1F2937; }
+    td { padding: 5px 7px; border-bottom: 1px solid #E5D2A7; text-align: center; }
+    td.produit-cell { text-align: left; padding: 6px 10px; background: #F4F9F0; font-weight: 700; }
+    td.total-cell { font-weight: 700; background: #EEF7E7; color: #3B6D11; }
+    tr:nth-child(even) td:not(.produit-cell):not(.total-cell) { background: #FAFAF7; }
+    .emballage { display: block; font-weight: 400; font-size: 8px; color: #6B7280; }
+    .pdf-footer { margin-top: 10px; padding-top: 6px; border-top: 1px solid #E5D2A7;
+      display: flex; justify-content: space-between; font-size: 8px; color: #6B7280; }
+  </style>
+  </head><body>
+  <div class="pdf-header">
+    <div style="display:flex;align-items:center">
+      <div class="pdf-logo">UV</div>
+      <div style="margin-left:12px">
+        <div class="pdf-title">PILOT PRÉVISIONS — Consolidation semaine</div>
+        <div class="pdf-subtitle">SCA UNI-VERT · Bio Équitable en France</div>
+      </div>
+    </div>
+    <div class="pdf-badge"><strong>S${semaine.split('-W')[1]}</strong>${semaine.split('-')[0]}</div>
+  </div>
+  ${table}
+  <div class="pdf-footer">
+    <div>Matrice consolidée tous producteurs</div>
+    <div>Imprimé le ${new Date().toLocaleString('fr-FR')} · PILOT v4.0</div>
+  </div>
+  </body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); win.close(); }, 600);
+}
+
+/* VUE ADMIN : RÉCAP PAR PRODUCTEUR */
+function initRecapProd() {
+  const sel = document.getElementById('recap-prod-select');
+  if (!sel) return;
+  // Peupler la liste déroulante avec tous les adhérents triés alpha
+  const tousAdherents = [...cache.adherents].sort((a, b) =>
+    (a.representant || '').localeCompare(b.representant || '', 'fr')
+  );
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Choisir un producteur —</option>';
+  tousAdherents.forEach(a => {
+    const o = document.createElement('option');
+    o.value = a.id;
+    o.textContent = `${a.representant}${a.nom_exploitation ? ' · ' + a.nom_exploitation : ''}`;
+    if (a.id === current) o.selected = true;
+    sel.appendChild(o);
+  });
+  if (current) loadRecapProd();
+}
+
+async function loadRecapProd() {
+  const sel = document.getElementById('recap-prod-select');
+  const adherentId = sel ? sel.value : '';
+  const content = document.getElementById('recap-prod-content');
+  const printBtn = document.getElementById('recap-prod-print-btn');
+
+  if (!adherentId) {
+    content.innerHTML = '<p class="empty-state">Sélectionnez un producteur pour voir ses prévisions.</p>';
+    if (printBtn) printBtn.style.display = 'none';
+    return;
+  }
+
+  const adherent = cache.adherents.find(a => a.id === adherentId);
+  if (!adherent) return;
+
+  content.innerHTML = '<p class="empty-state" style="padding:20px">⏳ Chargement…</p>';
+  showSync('syncing', '☁️ Chargement…');
+
+  const semaine = cache.semaineCourante;
+  const fields = ['vendredi1', 'samedi', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi2', 'samedi2'];
+  const headers = buildHeaders(semaine);
+
+  const [prevsR, statutR] = await Promise.all([
+    sb.from('previsions').select('*').eq('semaine_id', semaine).eq('adherent_id', adherentId),
+    sb.from('statuts_semaine').select('*').eq('semaine_id', semaine).eq('adherent_id', adherentId).maybeSingle()
+  ]);
+
+  if (prevsR.error) { showSync('error', '❌ Erreur'); return; }
+
+  const prevs = prevsR.data || [];
+  const statut = statutR.data?.statut || 'NON_SAISI';
+  const commentaire = statutR.data?.commentaire || '';
+  const dateSoumission = statutR.data?.date_soumission;
+
+  const prevsByCode = {};
+  prevs.forEach(p => prevsByCode[p.produit_code] = p);
+
+  // Produits de cet adhérent
+  const saison = cache.params.saison_active || 'Hiver';
+  const produitsAdherent = cache.adherentProduits
+    .filter(ap => ap.adherent_id === adherentId)
+    .map(ap => ap.produit_code);
+  const produitsMap = {};
+  cache.produits.forEach(p => produitsMap[p.code] = p);
+
+  // Lister tous les produits saisis (union des produits liés + ceux avec prévisions)
+  const codesAvecPrevision = prevs.filter(p => fields.some(f => parseFloat(p[f]) > 0)).map(p => p.produit_code);
+  const tousLesCodes = [...new Set([...produitsAdherent, ...codesAvecPrevision])];
+  let produits = tousLesCodes
+    .map(code => produitsMap[code] || { code, variete: code, emballage: '', saison: '' })
+    .sort((a, b) => (a.variete || '').localeCompare(b.variete || '', 'fr'));
+
+  const statutColor = { 'SOUMISE': '#4D8B3A', 'EN_COURS': '#B07820', 'NON_SAISI': '#6B7280', 'EN_RETARD': '#C44536' };
+
+  let totalSemaine = 0;
+  prevs.forEach(p => totalSemaine += fields.reduce((s, f) => s + (parseFloat(p[f]) || 0), 0));
+
+  // En-tête info producteur
+  let html = `<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+    <div style="background:var(--sable-light);border-radius:10px;padding:14px 18px;flex:1;min-width:200px;border-left:4px solid var(--olive)">
+      <div style="font-size:.78rem;text-transform:uppercase;letter-spacing:.7px;color:var(--encre-soft);font-weight:600;margin-bottom:6px">Producteur</div>
+      <div style="font-size:1.1rem;font-family:Georgia,serif;font-weight:700;color:var(--encre)">${adherent.representant}</div>
+      ${adherent.nom_exploitation ? `<div style="font-size:.85rem;color:var(--encre-soft);margin-top:2px">${adherent.nom_exploitation}</div>` : ''}
+      <div style="font-size:.75rem;color:var(--encre-soft);margin-top:4px">${adherent.code}${adherent.email ? ' · ' + adherent.email : ''}${adherent.tel ? ' · ' + adherent.tel : ''}</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div style="background:var(--blanc);border-radius:10px;padding:12px 16px;text-align:center;box-shadow:var(--shadow);border-top:3px solid ${statutColor[statut] || '#6B7280'}">
+        <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.7px;color:var(--encre-soft);font-weight:600">Statut</div>
+        <div style="margin-top:4px"><span class="statut-pill statut-${statut}">${statut.replace('_',' ')}</span></div>
+        ${dateSoumission ? `<div style="font-size:.72rem;color:var(--encre-soft);margin-top:4px">${new Date(dateSoumission).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>` : ''}
+      </div>
+      <div style="background:var(--blanc);border-radius:10px;padding:12px 16px;text-align:center;box-shadow:var(--shadow);border-top:3px solid var(--olive)">
+        <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.7px;color:var(--encre-soft);font-weight:600">Total S${semaine.split('-W')[1]}</div>
+        <div style="font-size:1.4rem;font-family:Georgia,serif;font-weight:700;color:var(--olive-dark);margin-top:4px">${totalSemaine.toLocaleString('fr-FR')}</div>
+        <div style="font-size:.72rem;color:var(--encre-soft)">colis</div>
+      </div>
+      <div style="background:var(--blanc);border-radius:10px;padding:12px 16px;text-align:center;box-shadow:var(--shadow);border-top:3px solid var(--safran)">
+        <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.7px;color:var(--encre-soft);font-weight:600">Produits</div>
+        <div style="font-size:1.4rem;font-family:Georgia,serif;font-weight:700;color:var(--encre);margin-top:4px">${produits.length}</div>
+        <div style="font-size:.72rem;color:var(--encre-soft)">lignes</div>
+      </div>
+    </div>
+  </div>`;
+
+  if (commentaire) {
+    html += `<div style="background:rgba(232,163,61,.1);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:.85rem;color:#633806">
+      💬 <em>${commentaire}</em>
+    </div>`;
+  }
+
+  // Tableau des prévisions
+  html += `<div class="table-wrapper"><table class="prev-table" id="recap-prod-table"><thead><tr>
+    <th class="produit-col">Produit</th>
+    ${headers.map(h => `<th>${h}</th>`).join('')}
+    <th class="total-col">TOTAL</th>
+  </tr></thead><tbody>`;
+
+  let grandTotal = 0;
+  produits.forEach(prod => {
+    const p = prevsByCode[prod.code] || {};
+    const total = fields.reduce((s, f) => s + (parseFloat(p[f]) || 0), 0);
+    grandTotal += total;
+    const hasData = total > 0;
+    html += `<tr style="${!hasData ? 'opacity:.45' : ''}">
+      <td class="produit-cell">
+        <span style="display:flex;align-items:center;gap:8px">
+          ${getVeggieIcon(prod.variete || prod.code)}
+          <span><strong>${prod.variete || prod.code}</strong><span class="emballage">${prod.emballage || ''}</span></span>
+        </span>
+      </td>
+      ${fields.map(f => `<td>${parseFloat(p[f]) || (hasData ? '<span style="color:var(--encre-soft);font-size:.8rem">—</span>' : '')}</td>`).join('')}
+      <td class="total-cell">${hasData ? total.toLocaleString('fr-FR') : '—'}</td>
+    </tr>`;
+  });
+
+  html += `<tr style="background:var(--olive);color:var(--sable);font-weight:700">
+    <td style="padding:10px">TOTAL GÉNÉRAL</td>
+    <td colspan="${fields.length}"></td>
+    <td style="background:var(--safran);color:var(--encre)">${grandTotal.toLocaleString('fr-FR')}</td>
+  </tr>`;
+  html += '</tbody></table></div>';
+
+  content.innerHTML = html;
+  if (printBtn) printBtn.style.display = '';
+  showSync('ok', '☁️ Synchronisé');
+}
+
+function printRecapProd() {
+  const sel = document.getElementById('recap-prod-select');
+  const adherentId = sel ? sel.value : '';
+  const adherent = cache.adherents.find(a => a.id === adherentId);
+  const semaine = cache.semaineCourante;
+  const tableEl = document.getElementById('recap-prod-table');
+  if (!tableEl || !adherent) return;
+  const table = tableEl.outerHTML;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Récap ${adherent.representant} - ${semaine}</title>
+  <style>
+    @page { size: A4 landscape; margin: 10mm 8mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 10px; color: #1F2937; }
+    .pdf-header { background: #5C7541; color: #FAF1DC; padding: 10px 16px; border-radius: 8px; margin-bottom: 12px;
+      display: flex; align-items: center; justify-content: space-between; }
+    .pdf-logo { width: 40px; height: 40px; border-radius: 50%; background: #FAF1DC; color: #5C7541;
+      display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; border: 2px solid #E8A33D; }
+    table { width: 100%; border-collapse: collapse; font-size: 9px; }
+    th { background: #44582F; color: #FAF1DC; padding: 6px 8px; text-align: center; font-size: 8px; text-transform: uppercase; }
+    th.produit-col { text-align: left; padding-left: 10px; background: #5C7541; }
+    th.total-col { background: #E8A33D; color: #1F2937; }
+    td { padding: 5px 7px; border-bottom: 1px solid #E5D2A7; text-align: center; }
+    td.produit-cell { text-align: left; padding: 6px 10px; background: #F4F9F0; font-weight: 700; }
+    td.total-cell { font-weight: 700; background: #EEF7E7; color: #3B6D11; }
+    tr:nth-child(even) td:not(.produit-cell):not(.total-cell) { background: #FAFAF7; }
+    .emballage { display: block; font-weight: 400; font-size: 8px; color: #6B7280; }
+    svg { display: none !important; }
+    .pdf-footer { margin-top: 8px; display: flex; justify-content: space-between; font-size: 8px; color: #6B7280; }
+  </style></head><body>
+  <div class="pdf-header">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="pdf-logo">UV</div>
+      <div>
+        <div style="font-family:Georgia,serif;font-size:14px;font-weight:700">PILOT PRÉVISIONS — Récap producteur</div>
+        <div style="font-size:9px;opacity:.85;margin-top:2px">${adherent.representant}${adherent.nom_exploitation ? ' · ' + adherent.nom_exploitation : ''} · ${adherent.code}</div>
+      </div>
+    </div>
+    <div style="background:rgba(232,163,61,.3);padding:4px 12px;border-radius:14px;font-size:9px;font-weight:700;text-align:center">
+      <strong style="display:block;font-size:13px;font-family:Georgia,serif">S${semaine.split('-W')[1]}</strong>${semaine.split('-')[0]}
+    </div>
+  </div>
+  ${table}
+  <div class="pdf-footer">
+    <div>SCA UNI-VERT · Document confidentiel</div>
+    <div>Imprimé le ${new Date().toLocaleString('fr-FR')} · PILOT v4.0</div>
+  </div>
+  </body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); win.close(); }, 600);
+}
+
+/* INIT */
+async function init() {
+  CFG = getConfig() || {
+    url: 'https://myxtaraziqgubvzekgjx.supabase.co',
+    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15eHRhcmF6aXFndWJ2emVrZ2p4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNzQzMTAsImV4cCI6MjA5NTg1MDMxMH0.aNx2g-K1zUeeNHzt-e2_KRQQBs2yADa5W8g0sTjCTbs'
+  };
+  localStorage.setItem('univert_supabase_config', JSON.stringify(CFG));
+  if (!initSupabase()) {
+    document.getElementById('config-screen').classList.remove('hidden');
+    return;
+  }
+  if (!await loadReferentiels()) {
+    toast('Erreur connexion Supabase. Vérifiez la configuration.');
+    document.getElementById('config-screen').classList.remove('hidden');
+    document.getElementById('cfg-url').value = CFG.url;
+    document.getElementById('cfg-key').value = CFG.key;
+    return;
+  }
+  buildLoginSelect();
+  try {
+    const s = sessionStorage.getItem('uv_session');
+    if (s) {
+      session = JSON.parse(s);
+      showApp();
+      return;
+    }
+  } catch (e) {}
+  showLogin();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

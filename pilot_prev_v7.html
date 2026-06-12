@@ -1653,13 +1653,13 @@ async function loadAdmin() {
       <td style="text-align:center;padding:6px">
         ${peutRelancer
           ? `<input type="checkbox" class="chk-adherent" onchange="updateSelectionCount()" data-id="${a.id}"
-              style="cursor:pointer;accent-color:var(--olive)" ${!email ? 'disabled title="Pas d'email enregistré"' : ''}>`
+              style="cursor:pointer;accent-color:var(--olive)" ${!email ? 'disabled title="Pas d&apos;email enregistré"' : ''}>`
           : '<span style="color:var(--sable-dark);font-size:.8rem">—</span>'}
       </td>
       <td class="produit-cell">
         <strong>${a.code} · ${a.representant}</strong>
         <span class="emballage">${a.nom_exploitation || ''}</span>
-        ${!email && peutRelancer ? '<span style="font-size:.7rem;color:var(--terracotta);display:block">⚠ pas d'email</span>' : ''}
+        ${!email && peutRelancer ? '<span style="font-size:.7rem;color:var(--terracotta);display:block">⚠ pas d\'email</span>' : ''}
       </td>
       <td><span class="statut-pill statut-${statut}">${statut.replace('_',' ')}</span></td>
       <td>${total}</td>
@@ -1703,7 +1703,7 @@ function updateSelectionCount() {
 }
 
 async function relancerAdherent(adherentId, email, nom) {
-  if (!email) { toast('⚠ Pas d'email pour ce producteur'); return; }
+  if (!email) { toast("⚠ Pas d'email pour ce producteur"); return; }
   const semaine = cache.semaineCourante;
   const wNum = semaine.split('-W')[1];
   if (!confirm(`Envoyer une relance à ${nom} (${email}) pour la semaine S${wNum} ?`)) return;
